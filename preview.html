@@ -131,7 +131,7 @@
       );
     }
 
-    function AppBar({ scrolled }) {
+    function AppBar({ scrolled, onReset }) {
       return (
         <div style={{height:52,backgroundColor:T.white,display:"flex",alignItems:"center",
           justifyContent:"space-between",padding:"0 8px",flexShrink:0,
@@ -142,7 +142,7 @@
               <path d="M10 5L3 12L10 19" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <button onClick={onReset} style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11.7892 3.20314C9.71984 3.1598 7.70576 3.87302 6.12483 5.20901C4.5439 6.545 3.50477 8.41194 3.2024 10.4596C2.90004 12.5072 3.35521 14.5948 4.48252 16.3307C5.21855 17.4641 6.20809 18.3967 7.36121 19.0625M11.7892 3.20314L9.76492 6.70934M11.7892 3.20314L7.9743 1.0006" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M12.5863 20.3867C14.6556 20.43 16.6697 19.7168 18.2507 18.3808C19.8316 17.0448 20.8707 15.1779 21.1731 13.1303C21.4755 11.0826 21.0203 8.99505 19.893 7.25914C19.1569 6.12575 18.1674 5.19313 17.0143 4.52735M12.5863 20.3867L14.6106 16.8805M12.5863 20.3867L16.4012 22.5892" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -343,6 +343,13 @@
       const toggle = id => setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
       const remove = id => setSelected(prev=>{const n=new Set(prev);n.delete(id);return n;});
 
+      const handleReset = useCallback(()=>{
+        setName(""); setPhone(""); setSearch("");
+        setBrand(null); setPet(null); setCat("");
+        setSelected(new Set());
+        if(scrollRef.current) scrollRef.current.scrollTop = 0;
+      },[]);
+
       const canProceed = name.trim()!=""&&phone.trim()!=""&&selected.size>0;
 
       const filtered = PRODUCTS.filter(p=>{
@@ -353,7 +360,7 @@
       return (
         <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <StatusBar/>
-          <AppBar scrolled={scrolled}/>
+          <AppBar scrolled={scrolled} onReset={handleReset}/>
 
           <div ref={scrollRef} onScroll={handleScroll} style={{flex:1,overflowY:"auto"}}>
 
