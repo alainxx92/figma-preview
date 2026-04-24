@@ -35,6 +35,7 @@
     input { font-family: inherit; }
     button { font-family: inherit; }
     ::-webkit-scrollbar { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -442,10 +443,104 @@
       );
     }
 
+    // ── Login Page
+    function LoginPage({ onLogin }) {
+      const [email, setEmail]     = useState("");
+      const [password, setPassword] = useState("");
+      const [showPw, setShowPw]   = useState(false);
+      const [loading, setLoading] = useState(false);
+
+      const canLogin = email.trim() !== "" && password.trim() !== "";
+
+      const handleLogin = () => {
+        if (!canLogin) return;
+        setLoading(true);
+        setTimeout(() => { setLoading(false); onLogin(); }, 900);
+      };
+
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+          <StatusBar/>
+
+          {/* AppBar */}
+          <div style={{height:52,backgroundColor:T.white,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0,position:"relative"}}>
+            <button style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <path d="M3 12H21" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 5L3 12L10 19" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>로그인</span>
+          </div>
+
+          {/* Form */}
+          <div style={{padding:"24px 16px",display:"flex",flexDirection:"column",gap:32,flex:1}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {/* 이메일 */}
+              <div style={{border:`1px solid ${email?T.primary:T.border}`,borderRadius:6,display:"flex",alignItems:"center",padding:"8px 8px 8px 16px",transition:"border-color .15s"}}>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="이메일"
+                  style={{flex:1,border:"none",outline:"none",background:"none",fontWeight:400,fontSize:14,lineHeight:"23px",letterSpacing:"-0.28px",color:T.primary,fontFamily:F}}/>
+                {email && (
+                  <button onClick={()=>setEmail("")} style={{border:"none",background:"none",cursor:"pointer",padding:6,display:"flex",flexShrink:0}}>
+                    <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                      <circle cx={12} cy={12} r={10} fill={T.border}/>
+                      <path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke={T.secondary} strokeWidth={1.4} strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {/* 비밀번호 */}
+              <div style={{border:`1px solid ${password?T.primary:T.border}`,borderRadius:6,display:"flex",alignItems:"center",padding:"8px 8px 8px 16px",transition:"border-color .15s"}}>
+                <input type={showPw?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} placeholder="비밀번호"
+                  style={{flex:1,border:"none",outline:"none",background:"none",fontWeight:400,fontSize:14,lineHeight:"23px",letterSpacing:"-0.28px",color:T.primary,fontFamily:F}}/>
+                {password && (
+                  <button onClick={()=>setShowPw(p=>!p)} style={{border:"none",background:"none",cursor:"pointer",padding:6,display:"flex",flexShrink:0}}>
+                    {showPw ? (
+                      <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx={12} cy={12} r={3}/>
+                      </svg>
+                    ) : (
+                      <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                        <line x1={1} y1={1} x2={23} y2={23}/>
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 로그인 버튼 */}
+            <button onClick={handleLogin} style={{
+              width:"100%",height:48,borderRadius:6,border:"none",
+              cursor:canLogin?"pointer":"default",
+              backgroundColor:canLogin?T.brand:T.bgLight,
+              fontWeight:700,fontSize:16,letterSpacing:"-0.32px",
+              color:canLogin?T.white:T.hint,fontFamily:F,
+              transition:"all .2s",
+            }}>로그인</button>
+          </div>
+
+          {/* iOS home indicator */}
+          <div style={{flexShrink:0,height:28,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{width:134,height:5,borderRadius:100,backgroundColor:"#000",opacity:.18}}/>
+          </div>
+
+          {/* 로딩 딤 오버레이 */}
+          {loading && (
+            <div style={{position:"absolute",inset:0,backgroundColor:"rgba(28,30,33,0.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",border:"3px solid rgba(255,255,255,0.25)",borderTop:"3px solid #fff",animation:"spin .7s linear infinite"}}/>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     // ── App Shell
     function App() {
-      const [tab, setTab] = useState("prescription");
-      const tabs = [["prescription","병원 처방 화면"],["dialog","Dialog"]];
+      const [tab, setTab]       = useState("login");
+      const [loggedIn, setLoggedIn] = useState(false);
+      const tabs = [["login","로그인"],["prescription","처방 화면"],["dialog","Dialog"]];
       return (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
           <div className="tabs">
@@ -454,23 +549,46 @@
             ))}
           </div>
 
-          {tab==="prescription"
-            ? <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-                <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
-                  병원상담 신청 · 375×812 · 3-state interactive
-                </p>
-                <div className="device"><PrescriptionPage/></div>
-                <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
-                  이름 + 휴대폰 번호 입력 후 상품 선택 → CTA 활성화<br/>
-                  상품 선택 → 하단 선택바 노출 &nbsp;|&nbsp; 스크롤 → 플로팅 그림자
-                </p>
+          {tab==="login" && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+              <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
+                {loggedIn?"로그인 완료 → 처방 화면":"이메일 로그인 · 375×812"}
+              </p>
+              <div className="device">
+                {loggedIn
+                  ? <PrescriptionPage/>
+                  : <LoginPage onLogin={()=>setLoggedIn(true)}/>
+                }
               </div>
-            : <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24}}>
-                <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase"}}>Dialog · node 1461:24655</p>
-                <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog/></div>
-                <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog title="정말 삭제하시겠습니까?" description="삭제된 항목은 복구할 수 없습니다." a1="취소" a2="삭제"/></div>
-              </div>
-          }
+              {loggedIn && (
+                <button onClick={()=>setLoggedIn(false)}
+                  style={{marginTop:8,fontSize:12,color:"#999",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+                  ← 로그인 화면으로
+                </button>
+              )}
+            </div>
+          )}
+
+          {tab==="prescription" && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+              <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
+                병원상담 신청 · 375×812 · 3-state interactive
+              </p>
+              <div className="device"><PrescriptionPage/></div>
+              <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
+                이름 + 휴대폰 번호 입력 후 상품 선택 → CTA 활성화<br/>
+                상품 선택 → 하단 선택바 노출 &nbsp;|&nbsp; 스크롤 → 플로팅 그림자
+              </p>
+            </div>
+          )}
+
+          {tab==="dialog" && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24}}>
+              <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase"}}>Dialog · node 1461:24655</p>
+              <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog/></div>
+              <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog title="정말 삭제하시겠습니까?" description="삭제된 항목은 복구할 수 없습니다." a1="취소" a2="삭제"/></div>
+            </div>
+          )}
         </div>
       );
     }
