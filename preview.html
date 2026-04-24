@@ -76,9 +76,9 @@
     const PET_TYPES  = ["강아지","고양이"];
     const CATEGORIES = ["요로기계","신장계","소화기계","피부/알러지","간/심장","관절","신경계","체중/당뇨","회복/기타"];
     const PRODUCTS   = [
-      {id:1,name:"로얄캐닌 캣 하이포알러제닉 2.5kg",  discount:10,price:"44,700",original:"49,700원",coupon:"5,000원 쿠폰 적용됨",rating:4,reviews:213,thumb:A.royalThumb,chipLayers:[A.royalBase,A.royalLogo]},
+      {id:1,name:"로얄캐닌 캣 하이포알러제닉 2.5kg",  discount:10,price:"44,700",original:"49,700원",coupon:"5,000원 쿠폰 적용됨",rating:4,reviews:213,thumb:A.hillsThumb,chipLayers:[A.royalBase,A.royalLogo]},
       {id:2,name:"힐스 캣 C/D 멀티케어 메타볼릭 1.5kg",discount:15,price:"38,200",original:"44,900원",coupon:"3,000원 쿠폰 적용됨",rating:4,reviews:87, thumb:A.hillsThumb,chipLayers:[A.hillsChipB,A.hillsChipL]},
-      {id:3,name:"로얄캐닌 캣 리날 레나 고양이 2kg",   discount:10,price:"52,100",original:"57,900원",coupon:"5,000원 쿠폰 적용됨",rating:5,reviews:341,thumb:A.royalThumb,chipLayers:[A.royalBase,A.royalLogo]},
+      {id:3,name:"로얄캐닌 캣 리날 레나 고양이 2kg",   discount:10,price:"52,100",original:"57,900원",coupon:"5,000원 쿠폰 적용됨",rating:5,reviews:341,thumb:A.hillsThumb,chipLayers:[A.royalBase,A.royalLogo]},
     ];
 
     // ── Primitives
@@ -279,10 +279,8 @@
           border:`1px solid ${T.bgLight}`,borderRadius:8,height:40,padding:"0 4px",
           flexShrink:0,width:220,gap:0}}>
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1,padding:"0 4px",minWidth:0}}>
-            <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,position:"relative",overflow:"hidden"}}>
-              {(product.chipLayers||[]).map((src,i)=>(
-                <img key={i} src={src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-              ))}
+            <div style={{width:24,height:24,borderRadius:4,flexShrink:0,overflow:"hidden",backgroundColor:T.disable}}>
+              {product.thumb && <img src={product.thumb} style={{width:"100%",height:"100%",objectFit:"cover"}}/>}
             </div>
             <span style={{fontWeight:500,fontSize:13,color:T.primary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
               {product.name}
