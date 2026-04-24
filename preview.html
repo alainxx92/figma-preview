@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Figma Preview</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px 60px;
+      font-family: sans-serif;
+    }
+    .tabs {
+      display: flex; gap: 6px; background: #fff;
+      border-radius: 10px; padding: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+      margin-bottom: 24px;
+    }
+    .tab { padding: 7px 18px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; background: none; color: #757c89; font-weight: 400; transition: all .15s; }
+    .tab.active { background: #2d3035; color: #fff; font-weight: 600; }
+    .device {
+      width: 375px; border-radius: 44px; overflow: hidden;
+      box-shadow: 0 32px 72px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+      background: #fff;
+    }
+    input::placeholder { color: #c6c9ce; }
+    input { font-family: inherit; }
+    button { font-family: inherit; }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
+
+    // ── Tokens
+    const T = {
+      primary: "#2D3035", secondary: "#757C89", tertiary: "#9CA1AA", hint: "#C6C9CE",
+      border: "#E9EBEC", disable: "#DBDDE0", bgLight: "#F1F1F1",
+      brand: "#FF4081", brandDeep: "#EA306F", brandBorder: "#FF5D94",
+      red: "#F33F46", white: "#FFFFFF",
+    };
+    const F = "'Pretendard', 'Apple SD Gothic Neo', sans-serif";
+
+    // ── Figma Assets (7일 유효)
+    const A = {
+      // 브랜드 필터 칩 로고 원형
+      royalBase:    "https://www.figma.com/api/mcp/asset/32ea7e9d-f422-4723-8086-014fc9dad948",
+      royalLogo:    "https://www.figma.com/api/mcp/asset/bf27bcc9-c21f-47ab-842e-8b2d47a753b6",
+      hillsL1:      "https://www.figma.com/api/mcp/asset/97a66f6c-8441-47f9-843e-3a6c2cd011c2",
+      hillsL2:      "https://www.figma.com/api/mcp/asset/d58d813c-e05c-426e-85b3-dd867285dadb",
+      // 하단 선택 칩 힐스 로고
+      hillsChipB:   "https://www.figma.com/api/mcp/asset/703319a5-f044-4752-aa0e-e990da2d8422",
+      hillsChipL:   "https://www.figma.com/api/mcp/asset/d08e6b5e-46cb-4b69-953c-728d926052c2",
+      // 상품 썸네일
+      royalThumb:   "https://www.figma.com/api/mcp/asset/90a1ae87-17d3-471c-b7ee-040215413602",
+      hillsThumb:   "https://www.figma.com/api/mcp/asset/63d5770f-a94c-4a75-b106-a04978f82a51",
+    };
+
+    // ── Data
+    const BRANDS = [
+      { id:"royal", label:"로얄캐닌", layers:[A.royalBase, A.royalLogo] },
+      { id:"hills",  label:"힐스",    layers:[A.royalBase, A.hillsL1, A.hillsL2] },
+    ];
+    const PET_TYPES  = ["강아지","고양이"];
+    const CATEGORIES = ["요로기계","신장계","소화기계","피부/알러지","간/심장","관절","신경계","체중/당뇨","회복/기타"];
+    const PRODUCTS   = [
+      {id:1,name:"로얄캐닌 캣 하이포알러제닉 2.5kg",  discount:10,price:"44,700",original:"49,700원",coupon:"5,000원 쿠폰 적용됨",rating:4,reviews:213,thumb:A.royalThumb,chipLayers:[A.royalBase,A.royalLogo]},
+      {id:2,name:"힐스 캣 C/D 멀티케어 메타볼릭 1.5kg",discount:15,price:"38,200",original:"44,900원",coupon:"3,000원 쿠폰 적용됨",rating:4,reviews:87, thumb:A.hillsThumb,chipLayers:[A.hillsChipB,A.hillsChipL]},
+      {id:3,name:"로얄캐닌 캣 리날 레나 고양이 2kg",   discount:10,price:"52,100",original:"57,900원",coupon:"5,000원 쿠폰 적용됨",rating:5,reviews:341,thumb:A.royalThumb,chipLayers:[A.royalBase,A.royalLogo]},
+    ];
+
+    // ── Primitives
+    function Checkbox({ checked, onChange }) {
+      return (
+        <div onClick={onChange} style={{ width:20,height:20,borderRadius:4,flexShrink:0,cursor:"pointer",
+          border:`2px solid ${checked?T.brand:T.disable}`,backgroundColor:checked?T.brand:T.white,
+          display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s" }}>
+          {checked && <svg width={11} height={9} viewBox="0 0 11 9" fill="none">
+            <path d="M1 4L4 7.5L10 1" stroke="#fff" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>}
+        </div>
+      );
+    }
+
+    function Stars({ n }) {
+      return <div style={{display:"flex",gap:1}}>
+        {[1,2,3,4,5].map(i=>(
+          <svg key={i} width={11} height={11} viewBox="0 0 11 11" fill={i<=n?"#FFC700":T.border}>
+            <path d="M4.95773 1.15573C5.17382 0.695767 5.82811 0.695921 6.04398 1.15599L7.06422 3.33041C7.14922 3.51156 7.31893 3.63842 7.51674 3.66866L9.84603 4.02468C10.3288 4.09847 10.5259 4.68725 10.1848 5.03679L8.46207 6.80263C8.32911 6.93891 8.26872 7.13022 8.29935 7.31814L8.70057 9.77977C8.78113 10.2741 8.25637 10.6437 7.81806 10.4014L5.79136 9.28083C5.61075 9.18097 5.3915 9.18094 5.21086 9.28075L3.1819 10.4019C2.74359 10.644 2.21898 10.2744 2.29953 9.78017L2.70082 7.31814C2.73145 7.13022 2.67106 6.93891 2.5381 6.80263L0.815323 5.03679C0.474306 4.68725 0.671407 4.09847 1.15414 4.02468L3.48361 3.66863C3.68132 3.63841 3.85097 3.51166 3.93601 3.33064L4.95773 1.15573Z"/>
+          </svg>
+        ))}
+      </div>;
+    }
+
+    function StatusBar() {
+      return (
+        <div style={{height:44,backgroundColor:T.white,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",flexShrink:0}}>
+          <span style={{fontWeight:700,fontSize:15,color:T.primary}}>9:41</span>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            <svg width={17} height={12} viewBox="0 0 17 12" fill={T.primary}>
+              <rect x="0" y="6" width="3" height="6" rx="0.5"/>
+              <rect x="4" y="4" width="3" height="8" rx="0.5"/>
+              <rect x="8" y="2" width="3" height="10" rx="0.5"/>
+              <rect x="12" y="0" width="3" height="12" rx="0.5"/>
+            </svg>
+            <svg width={16} height={12} viewBox="0 0 16 12" fill="none" stroke={T.primary} strokeWidth={1.4} strokeLinecap="round">
+              <path d="M1 4.5C3.8 1.8 12.2 1.8 15 4.5"/>
+              <path d="M3.2 7C5.1 5.2 10.9 5.2 12.8 7"/>
+              <path d="M5.5 9.5C6.5 8.6 9.5 8.6 10.5 9.5"/>
+              <circle cx="8" cy="11.5" r="0.8" fill={T.primary} stroke="none"/>
+            </svg>
+            <svg width={25} height={12} viewBox="0 0 25 12" fill="none">
+              <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke={T.primary}/>
+              <rect x="2" y="2" width="17" height="8" rx="1.5" fill={T.primary}/>
+              <path d="M23 4v4" stroke={T.primary} strokeWidth={1.5} strokeLinecap="round"/>
+            </svg>
+          </div>
+        </div>
+      );
+    }
+
+    function AppBar({ scrolled }) {
+      return (
+        <div style={{height:52,backgroundColor:T.white,display:"flex",alignItems:"center",
+          justifyContent:"space-between",padding:"0 8px",flexShrink:0,
+          boxShadow:scrolled?"0 2px 8px rgba(0,0,0,.08)":"none",transition:"box-shadow .2s"}}>
+          <button style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12H21" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 5L3 12L10 19" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.7892 3.20314C9.71984 3.1598 7.70576 3.87302 6.12483 5.20901C4.5439 6.545 3.50477 8.41194 3.2024 10.4596C2.90004 12.5072 3.35521 14.5948 4.48252 16.3307C5.21855 17.4641 6.20809 18.3967 7.36121 19.0625M11.7892 3.20314L9.76492 6.70934M11.7892 3.20314L7.9743 1.0006" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12.5863 20.3867C14.6556 20.43 16.6697 19.7168 18.2507 18.3808C19.8316 17.0448 20.8707 15.1779 21.1731 13.1303C21.4755 11.0826 21.0203 8.99505 19.893 7.25914C19.1569 6.12575 18.1674 5.19313 17.0143 4.52735M12.5863 20.3867L14.6106 16.8805M12.5863 20.3867L16.4012 22.5892" stroke="#2D3035" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      );
+    }
+
+    function InputField({ label, placeholder, value, onChange, type="text" }) {
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <span style={{fontWeight:500,fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.tertiary}}>{label}</span>
+          <div style={{border:`1px solid ${value?T.primary:T.border}`,borderRadius:6,display:"flex",alignItems:"center",padding:"0 8px 0 16px",height:52,transition:"border-color .15s"}}>
+            <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+              style={{flex:1,border:"none",outline:"none",background:"none",fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:T.primary,width:"100%"}}/>
+            {value && (
+              <button onClick={()=>onChange("")} style={{border:"none",background:"none",cursor:"pointer",padding:6,display:"flex"}}>
+                <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                  <circle cx={8} cy={8} r={7} fill={T.border}/>
+                  <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke={T.secondary} strokeWidth={1.4} strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function ChoiceChip({ label, selected, onClick, layers }) {
+      return (
+        <button onClick={onClick} style={{
+          height:32,borderRadius:100,
+          border:`1px solid ${selected?T.primary:T.border}`,
+          backgroundColor:selected?T.primary:T.white,
+          display:"inline-flex",alignItems:"center",gap:4,
+          padding:layers?"4px 12px 4px 4px":"4px 12px",
+          cursor:"pointer",whiteSpace:"nowrap",transition:"all .15s",
+        }}>
+          {layers && (
+            <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,position:"relative",overflow:"hidden"}}>
+              {layers.map((src,i)=>(
+                <img key={i} src={src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+              ))}
+            </div>
+          )}
+          <span style={{fontWeight:400,fontSize:14,letterSpacing:"-0.28px",color:selected?"#FAFAFA":T.primary}}>{label}</span>
+        </button>
+      );
+    }
+
+    function CategoryGrid({ selected, onSelect }) {
+      return (
+        <div style={{border:`1px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
+            {CATEGORIES.map((cat,i)=>{
+              const sel=selected===cat, col=i%3, row=Math.floor(i/3);
+              return (
+                <button key={cat} onClick={()=>onSelect(sel?"":cat)} style={{
+                  height:40,border:"none",backgroundColor:sel?"#FFF0F5":T.white,
+                  borderRight:col<2?`1px solid ${T.border}`:"none",
+                  borderBottom:row<2?`1px solid ${T.border}`:"none",
+                  cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"-0.28px",
+                  color:sel?T.brand:T.secondary,transition:"all .15s",
+                }}>{cat}</button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    function ProductCard({ product, checked, onToggle }) {
+      return (
+        <div style={{border:`1px solid ${checked?T.brand:T.bgLight}`,borderRadius:8,padding:16,
+          display:"flex",gap:14,position:"relative",backgroundColor:checked?"#FFF8FB":T.white,
+          transition:"all .15s"}}>
+          <div style={{position:"absolute",top:16,left:16}}>
+            <Checkbox checked={checked} onChange={onToggle}/>
+          </div>
+          {/* 상품 이미지 */}
+          <div style={{marginLeft:28,width:100,height:100,borderRadius:8,backgroundColor:T.disable,flexShrink:0,position:"relative",overflow:"hidden"}}>
+            {product.thumb
+              ? <img src={product.thumb} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              : (product.chipLayers||[]).map((src,i)=>(
+                  <img key={i} src={src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+                ))
+            }
+          </div>
+          {/* 정보 */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+            <p style={{margin:0,fontWeight:500,fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.primary}}>{product.name}</p>
+            <div style={{display:"flex",gap:4,alignItems:"center",marginTop:4}}>
+              <span style={{fontWeight:500,fontSize:12,letterSpacing:"-0.24px",color:T.red}}>쿠폰 적용가</span>
+              <span style={{fontWeight:400,fontSize:12,color:T.tertiary,textDecoration:"line-through"}}>{product.original}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"baseline",gap:2,marginTop:2}}>
+              <span style={{fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.red}}>{product.discount}%</span>
+              <span style={{fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>{product.price}</span>
+              <span style={{fontWeight:400,fontSize:14,color:T.primary}}>원</span>
+            </div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:3,border:`1px solid ${T.brandBorder}`,borderRadius:4,padding:"2px 6px",marginTop:5,alignSelf:"flex-start",backgroundColor:T.white}}>
+              <span style={{fontWeight:700,fontSize:10,letterSpacing:"-0.2px",color:T.brandDeep}}>{product.coupon}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:3,marginTop:5}}>
+              <Stars n={product.rating}/>
+              <span style={{fontWeight:400,fontSize:12,color:T.tertiary}}>({product.reviews})</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",marginTop:4}}>
+              <svg width="74" height="16" viewBox="0 0 74 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clipPath="url(#clip0)">
+                  <path d="M54.8838 9.67578C57.3775 9.67578 58.7251 10.4646 58.4678 11.8379C58.207 13.2244 56.5528 14 54.0723 14C51.5916 14 50.2132 13.2244 50.4766 11.8379C50.7403 10.4511 52.3901 9.67579 54.8838 9.67578ZM38.6943 3.45801C38.4864 4.56439 38.2737 5.69982 37.7002 7.19629H39.123L38.8213 8.81152L34.6113 8.81055L34.4639 9.5957C36.3283 9.77284 37.3017 10.5485 37.0723 11.7705C36.8074 13.1819 35.1425 13.9834 32.6553 13.9834C30.1682 13.9834 28.8144 13.1866 29.0811 11.7754C29.3105 10.5534 30.5752 9.77676 32.4932 9.59961L32.6416 8.81543H28.4922L28.7959 7.2002H35.7529C35.8977 6.81903 36.0124 6.46219 36.1143 6.11914L30.083 6.37207L30.1582 4.74414L36.5137 4.64258C36.5694 4.41843 36.6106 4.19439 36.6514 3.98145H30.6543L30.958 2.3623H38.9004L38.6943 3.45801ZM48.0957 13.9619H46.2344L47.3301 8.12305H46.6729L45.6709 13.4648H43.8477L45.9609 2.19727H47.7842L46.9785 6.49512H47.6357L48.4727 2.03125H50.334L48.0957 13.9619ZM26.4004 13.8027H18.6807L19.5479 9.18652H27.2676L26.4004 13.8027ZM54.5986 11.2021C53.2124 11.2021 52.5616 11.3682 52.4727 11.8379C52.3841 12.3073 52.9619 12.4746 54.3594 12.4746C55.757 12.4746 56.3843 12.314 56.4736 11.8379C56.5615 11.3682 55.9849 11.2021 54.5986 11.2021ZM33.1973 11.0996C31.8234 11.0996 31.1696 11.2783 31.0762 11.7725C30.9829 12.2669 31.5728 12.4346 32.9473 12.4346C34.3214 12.4345 34.9838 12.2556 35.0781 11.7725C35.1722 11.2895 34.5833 11.0996 33.1973 11.0996ZM20.9141 12.2129H24.7812L25.0518 10.7764H21.1836L20.9141 12.2129ZM41.9141 5.61719H42.8496L43.3301 3.06152H45.1416L43.6084 11.2275H39.0234L40.5566 3.06152H42.3936L41.9141 5.61719ZM41.1631 9.6123H42.1006L42.5537 7.19531H41.6172L41.1631 9.6123ZM56.2598 7.60547H60.4668L60.166 9.20801H49.8271L50.1279 7.60547H54.2881L54.5332 6.2959H56.5039L56.2598 7.60547ZM27.3594 8.71484H25.3887L26.6494 2H28.6201L27.3594 8.71484ZM23.292 3.55176C23.0465 4.86114 23.3897 6.21013 25.2305 6.76953L23.9961 8.3584C22.801 7.98956 22.1098 7.26459 21.7764 6.32422C21.0208 7.43772 19.9097 8.23282 18.6436 8.56641L18 6.96289C20.1291 6.34967 21.0384 4.87011 21.2861 3.55176L21.5 2.41895H23.5068L23.292 3.55176ZM57.2354 2.52832C56.9964 3.79954 57.5174 5.10674 60.3594 5.45312L59.3408 7.05566C57.411 6.76306 56.2527 6.01212 55.7617 4.92578C54.8558 5.99417 53.4214 6.76978 51.4102 7.05566L50.9941 5.45312C53.9164 5.11011 54.9905 3.7233 55.2158 2.52832L55.2637 2.27344H57.2832L57.2354 2.52832Z" fill="#FF4081"/>
+                  <g clipPath="url(#clip1)">
+                    <path d="M14 6.43041C14 4.53572 12.5496 3 10.7606 3C9.59275 3 8.57022 3.65365 7.99695 4.63362C7.42978 3.65365 6.40725 3 5.24039 3C3.45045 3 2 4.53572 2 6.43041C2 6.45118 2 6.47095 2 6.49073C2 6.51051 2 6.53226 2 6.55303C2 10.9822 7.99695 13.4 7.99695 13.4C7.99695 13.4 13.9939 10.9822 13.9939 6.55303C13.9939 6.53226 13.9939 6.51249 13.9939 6.49073C13.9939 6.46897 14 6.45019 14 6.43041Z" fill="#FF4081"/>
+                    <path d="M12.4001 6.97447C12.4001 5.66739 11.3362 4.59961 10.0239 4.59961C9.60691 4.60504 9.19911 4.71278 8.8427 4.91165C8.4863 5.11053 8.19425 5.39332 7.99681 5.73074C7.79992 5.39421 7.5089 5.11199 7.15375 4.91317C6.7986 4.71435 6.39216 4.60611 5.97632 4.59961C4.66288 4.59961 3.6001 5.66237 3.6001 6.97447C3.6001 6.98855 3.6001 7.00263 3.6001 7.0167C3.6001 7.03078 3.6001 7.04485 3.6001 7.05994C3.6001 10.1265 7.99681 11.7996 7.99681 11.7996C7.99681 11.7996 12.3968 10.1265 12.3968 7.05994C12.3968 7.04485 12.3968 7.03078 12.3968 7.0167C12.3968 7.00263 12.4001 6.98855 12.4001 6.97447Z" fill="#EA306F"/>
+                    <path d="M11.5998 6.19961C12.0416 6.19961 12.3998 5.84144 12.3998 5.39961C12.3998 4.95778 12.0416 4.59961 11.5998 4.59961C11.158 4.59961 10.7998 4.95778 10.7998 5.39961C10.7998 5.84144 11.158 6.19961 11.5998 6.19961Z" fill="white"/>
+                    <path d="M15.6201 4.5C15.7223 4.5052 15.819 4.55132 15.8896 4.62891C15.9603 4.70671 16 4.81051 16 4.91797C16 5.02536 15.9602 5.12828 15.8896 5.20605C15.819 5.28386 15.7224 5.33073 15.6201 5.33594H12.8799C12.7776 5.33073 12.681 5.28386 12.6104 5.20605C12.5398 5.12828 12.5 5.02536 12.5 4.91797C12.5 4.81051 12.5397 4.70671 12.6104 4.62891C12.681 4.55132 12.7777 4.5052 12.8799 4.5H15.6201ZM14.5391 3C14.6456 3 14.7479 3.04428 14.8232 3.12305C14.8985 3.20179 14.9404 3.30857 14.9404 3.41992C14.9404 3.53126 14.8985 3.63804 14.8232 3.7168C14.7479 3.79556 14.6456 3.83984 14.5391 3.83984H10.9014C10.7949 3.83976 10.6924 3.79549 10.6172 3.7168C10.5421 3.63806 10.5 3.53116 10.5 3.41992C10.5 3.30867 10.542 3.20177 10.6172 3.12305C10.6924 3.04435 10.7949 3.00008 10.9014 3H14.5391Z" fill="#EA306F"/>
+                  </g>
+                </g>
+                <defs>
+                  <clipPath id="clip0"><rect width="74" height="16" fill="white"/></clipPath>
+                  <clipPath id="clip1"><rect width="16" height="16" fill="white"/></clipPath>
+                </defs>
+              </svg>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function SelectedChip({ product, onRemove }) {
+      return (
+        <div style={{display:"flex",alignItems:"center",backgroundColor:"#FAFAFA",
+          border:`1px solid ${T.bgLight}`,borderRadius:8,height:40,padding:"0 4px",
+          flexShrink:0,width:220,gap:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flex:1,padding:"0 4px",minWidth:0}}>
+            <div style={{width:24,height:24,borderRadius:"50%",flexShrink:0,position:"relative",overflow:"hidden"}}>
+              {(product.chipLayers||[]).map((src,i)=>(
+                <img key={i} src={src} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+              ))}
+            </div>
+            <span style={{fontWeight:500,fontSize:13,color:T.primary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
+              {product.name}
+            </span>
+          </div>
+          <button onClick={onRemove} style={{border:"none",background:"none",cursor:"pointer",padding:4,display:"flex",flexShrink:0}}>
+            <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+              <path d="M4 4l8 8M12 4l-8 8" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      );
+    }
+
+    function BottomBar({ selectedIds, onRemove, ctaEnabled, scrolled }) {
+      const selected = PRODUCTS.filter(p=>selectedIds.has(p.id));
+      return (
+        <div style={{flexShrink:0,backgroundColor:T.white,
+          boxShadow:scrolled&&selected.length>0?"0 -4px 20px rgba(0,0,0,.1)":"0 -1px 0 #E9EBEC",
+          transition:"box-shadow .2s"}}>
+          {selected.length > 0 && (
+            <div style={{height:56,display:"flex",alignItems:"center",borderTop:`1px solid ${T.border}`,overflow:"hidden"}}>
+              <div style={{display:"flex",gap:8,overflowX:"auto",padding:"0 16px"}}>
+                {selected.map(p=><SelectedChip key={p.id} product={p} onRemove={()=>onRemove(p.id)}/>)}
+              </div>
+            </div>
+          )}
+          <div style={{padding:"10px 16px"}}>
+            <button style={{
+              width:"100%",height:48,borderRadius:6,border:"none",
+              cursor:ctaEnabled?"pointer":"default",
+              backgroundColor:ctaEnabled?T.brand:T.bgLight,
+              fontWeight:700,fontSize:14,letterSpacing:"-0.28px",
+              color:ctaEnabled?T.white:T.hint,transition:"all .2s",
+            }}>다음</button>
+          </div>
+          <div style={{height:28,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{width:134,height:5,borderRadius:100,backgroundColor:"#000",opacity:.18}}/>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Main Page
+    function PrescriptionPage() {
+      const [name, setName]     = useState("");
+      const [phone, setPhone]   = useState("");
+      const [search, setSearch] = useState("");
+      const [brand, setBrand]   = useState(null);
+      const [pet, setPet]       = useState(null);
+      const [cat, setCat]       = useState("");
+      const [selected, setSelected] = useState(new Set());
+      const [scrolled, setScrolled] = useState(false);
+      const scrollRef = useRef(null);
+
+      const handleScroll = useCallback(()=>{
+        if(scrollRef.current) setScrolled(scrollRef.current.scrollTop > 0);
+      },[]);
+
+      const toggle = id => setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
+      const remove = id => setSelected(prev=>{const n=new Set(prev);n.delete(id);return n;});
+
+      const canProceed = name.trim()!=""&&phone.trim()!=""&&selected.size>0;
+
+      const filtered = PRODUCTS.filter(p=>{
+        if(search&&!p.name.includes(search)) return false;
+        return true;
+      });
+
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          <AppBar scrolled={scrolled}/>
+
+          <div ref={scrollRef} onScroll={handleScroll} style={{flex:1,overflowY:"auto"}}>
+
+            {/* 보호자 정보 */}
+            <section style={{padding:"20px 16px 0"}}>
+              <p style={{margin:"0 0 12px",fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>
+                보호자 정보를 입력해주세요
+              </p>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                <InputField label="이름" placeholder="이름을 입력해주세요" value={name} onChange={setName}/>
+                <InputField label="휴대폰 번호" placeholder="휴대폰 번호를 입력해주세요" value={phone} onChange={setPhone} type="tel"/>
+              </div>
+            </section>
+
+            <div style={{height:10,backgroundColor:T.bgLight,margin:"20px 0"}}/>
+
+            {/* 처방식 상품 선택 */}
+            <section style={{padding:"0 16px 24px"}}>
+              <p style={{margin:"0 0 16px",fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>
+                처방식 상품을 선택해 주세요
+              </p>
+
+              {/* 검색 */}
+              <div style={{border:`1px solid ${T.border}`,borderRadius:6,height:52,display:"flex",alignItems:"center",padding:"0 14px",gap:8,marginBottom:16}}>
+                <svg width={20} height={20} viewBox="0 0 20 20" fill="none" stroke={T.hint} strokeWidth={1.6} strokeLinecap="round">
+                  <circle cx={9} cy={9} r={6.5}/><path d="M14 14L17.5 17.5"/>
+                </svg>
+                <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="브랜드, 상품명을 검색하세요"
+                  style={{flex:1,border:"none",outline:"none",background:"none",fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}/>
+                {search&&<button onClick={()=>setSearch("")} style={{border:"none",background:"none",cursor:"pointer",padding:0}}>
+                  <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                    <circle cx={8} cy={8} r={7} fill={T.border}/>
+                    <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke={T.secondary} strokeWidth={1.4} strokeLinecap="round"/>
+                  </svg>
+                </button>}
+              </div>
+
+              {/* 브랜드 */}
+              <div style={{display:"flex",gap:8,marginBottom:12}}>
+                {BRANDS.map(b=><ChoiceChip key={b.id} label={b.label} layers={b.layers}
+                  selected={brand===b.id} onClick={()=>setBrand(prev=>prev===b.id?null:b.id)}/>)}
+              </div>
+
+              <div style={{height:1,backgroundColor:T.border,margin:"0 -16px 12px",width:"calc(100% + 32px)"}}/>
+
+              {/* 반려동물 */}
+              <div style={{display:"flex",gap:8,marginBottom:16}}>
+                {PET_TYPES.map(t=><ChoiceChip key={t} label={t} selected={pet===t} onClick={()=>setPet(prev=>prev===t?null:t)}/>)}
+              </div>
+
+              <CategoryGrid selected={cat} onSelect={setCat}/>
+
+              {/* 상품 */}
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
+                {filtered.map(p=><ProductCard key={p.id} product={p} checked={selected.has(p.id)} onToggle={()=>toggle(p.id)}/>)}
+                {filtered.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:T.hint,fontSize:14}}>검색 결과가 없습니다</div>}
+              </div>
+            </section>
+          </div>
+
+          <BottomBar selectedIds={selected} onRemove={remove} ctaEnabled={canProceed} scrolled={scrolled}/>
+        </div>
+      );
+    }
+
+    // ── Dialog
+    function Dialog({ title="다이얼로그 헤더가 보여요", description="다이얼로그 바디 텍스트가 보여요 다이얼로그 바디 텍스트가 보여요", a1="Action 1", a2="Action 2" }) {
+      return (
+        <div style={{display:"flex",flexDirection:"column",width:295}}>
+          <div style={{backgroundColor:T.white,display:"flex",alignItems:"center",justifyContent:"center",padding:"28px 10px",borderTopLeftRadius:10,borderTopRightRadius:10,width:295}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,textAlign:"center",width:247}}>
+              <p style={{margin:0,fontWeight:500,fontSize:16,letterSpacing:"-0.32px",color:T.primary,lineHeight:"normal"}}>{title}</p>
+              <p style={{margin:0,fontWeight:400,fontSize:14,letterSpacing:"-0.28px",color:T.secondary,lineHeight:"normal"}}>{description}</p>
+            </div>
+          </div>
+          <div style={{backgroundColor:T.white,display:"flex",flexDirection:"column",borderBottomLeftRadius:10,borderBottomRightRadius:10,width:"100%"}}>
+            <div style={{height:1,backgroundColor:"#E9EBEC",width:295}}/>
+            <div style={{display:"flex"}}>
+              <button style={{width:147,height:48,border:"none",background:"none",cursor:"pointer",fontWeight:400,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>{a1}</button>
+              <div style={{width:1,height:48,backgroundColor:"#E9EBEC",flexShrink:0}}/>
+              <button style={{width:147,height:48,border:"none",background:"none",cursor:"pointer",fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>{a2}</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── App Shell
+    function App() {
+      const [tab, setTab] = useState("prescription");
+      const tabs = [["prescription","병원 처방 화면"],["dialog","Dialog"]];
+      return (
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <div className="tabs">
+            {tabs.map(([k,l])=>(
+              <button key={k} className={`tab${tab===k?" active":""}`} onClick={()=>setTab(k)}>{l}</button>
+            ))}
+          </div>
+
+          {tab==="prescription"
+            ? <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
+                  병원상담 신청 · 375×812 · 3-state interactive
+                </p>
+                <div className="device"><PrescriptionPage/></div>
+                <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
+                  이름 + 휴대폰 번호 입력 후 상품 선택 → CTA 활성화<br/>
+                  상품 선택 → 하단 선택바 노출 &nbsp;|&nbsp; 스크롤 → 플로팅 그림자
+                </p>
+              </div>
+            : <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24}}>
+                <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase"}}>Dialog · node 1461:24655</p>
+                <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog/></div>
+                <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog title="정말 삭제하시겠습니까?" description="삭제된 항목은 복구할 수 없습니다." a1="취소" a2="삭제"/></div>
+              </div>
+          }
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
