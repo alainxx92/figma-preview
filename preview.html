@@ -702,6 +702,32 @@
       );
     }
 
+    function PrescriptionTab() {
+      const [pScreen, setPScreen] = useState("prescription"); // prescription | confirm
+      const [selIds, setSelIds]   = useState(new Set());
+      return (
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+          <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
+            {pScreen==="prescription"?"병원상담 신청 · 375×812 · 3-state interactive":"처방 확인 · 약관 동의"}
+          </p>
+          <div className="device">
+            {pScreen==="prescription" && (
+              <PrescriptionPage onNext={(ids)=>{ setSelIds(new Set(ids)); setPScreen("confirm"); }}/>
+            )}
+            {pScreen==="confirm" && (
+              <ConfirmPage products={PRODUCTS.filter(p=>selIds.has(p.id))} onBack={()=>setPScreen("prescription")}/>
+            )}
+          </div>
+          {pScreen==="confirm" && (
+            <button onClick={()=>setPScreen("prescription")}
+              style={{marginTop:8,fontSize:12,color:"#999",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+              ← 처방 화면으로
+            </button>
+          )}
+        </div>
+      );
+    }
+
     // ── App Shell
     function App() {
       const [tab, setTab]       = useState("login");
@@ -746,16 +772,7 @@
           )}
 
           {tab==="prescription" && (
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-              <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
-                병원상담 신청 · 375×812 · 3-state interactive
-              </p>
-              <div className="device"><PrescriptionPage/></div>
-              <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
-                이름 + 휴대폰 번호 입력 후 상품 선택 → CTA 활성화<br/>
-                상품 선택 → 하단 선택바 노출 &nbsp;|&nbsp; 스크롤 → 플로팅 그림자
-              </p>
-            </div>
+            <PrescriptionTab/>
           )}
 
           {tab==="confirm" && (
