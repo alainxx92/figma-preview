@@ -66,6 +66,11 @@
       // 상품 썸네일
       royalThumb:   "https://www.figma.com/api/mcp/asset/90a1ae87-17d3-471c-b7ee-040215413602",
       hillsThumb:   "https://www.figma.com/api/mcp/asset/63d5770f-a94c-4a75-b106-a04978f82a51",
+      // 처방확인 화면
+      confirmAppIcon:  "https://www.figma.com/api/mcp/asset/2b703c21-e6c5-4983-9002-ee7151aa0f03",
+      confirmThumb:    "https://www.figma.com/api/mcp/asset/f0a6a26b-b28e-4d9f-9e74-6c99f0f6173f",
+      confirmCoupon:   "https://www.figma.com/api/mcp/asset/616677f6-cad8-437d-88d0-b8ba7e6d2673",
+      confirmDelivery: "https://www.figma.com/api/mcp/asset/6ba79ae4-83ee-412d-86fc-d9ea80fd45b9",
     };
 
     // ── Data
@@ -295,7 +300,7 @@
       );
     }
 
-    function BottomBar({ selectedIds, onRemove, ctaEnabled, scrolled }) {
+    function BottomBar({ selectedIds, onRemove, ctaEnabled, scrolled, onNext }) {
       const selected = PRODUCTS.filter(p=>selectedIds.has(p.id));
       return (
         <div style={{flexShrink:0,backgroundColor:T.white,
@@ -309,7 +314,7 @@
             </div>
           )}
           <div style={{padding:"10px 16px"}}>
-            <button style={{
+            <button onClick={ctaEnabled&&onNext?onNext:undefined} style={{
               width:"100%",height:48,borderRadius:6,border:"none",
               cursor:ctaEnabled?"pointer":"default",
               backgroundColor:ctaEnabled?T.brand:T.bgLight,
@@ -325,7 +330,7 @@
     }
 
     // ── Main Page
-    function PrescriptionPage() {
+    function PrescriptionPage({ onNext }) {
       const [name, setName]     = useState("");
       const [phone, setPhone]   = useState("");
       const [search, setSearch] = useState("");
@@ -351,6 +356,7 @@
       },[]);
 
       const canProceed = name.trim()!=""&&phone.trim()!=""&&selected.size>0;
+      const handleNext = useCallback(()=>{ if(onNext) onNext(selected); },[onNext,selected]);
 
       const filtered = PRODUCTS.filter(p=>{
         if(search&&!p.name.includes(search)) return false;
@@ -421,7 +427,162 @@
             </section>
           </div>
 
-          <BottomBar selectedIds={selected} onRemove={remove} ctaEnabled={canProceed} scrolled={scrolled}/>
+          <BottomBar selectedIds={selected} onRemove={remove} ctaEnabled={canProceed} scrolled={scrolled} onNext={handleNext}/>
+        </div>
+      );
+    }
+
+    // ── Confirm Page
+    function ConfirmPage({ products, onBack }) {
+      const [agreeAll, setAgreeAll] = useState(false);
+      const [agree1, setAgree1]     = useState(false);
+      const [agree2, setAgree2]     = useState(false);
+      const [expanded, setExpanded] = useState(false);
+      const [scrolled, setScrolled] = useState(false);
+      const scrollRef = useRef(null);
+
+      const displayProducts = products && products.length > 0 ? products : PRODUCTS.slice(0,2);
+      const ctaEnabled = agree1 && agree2;
+
+      const toggleAll = () => {
+        const v = !agreeAll;
+        setAgreeAll(v); setAgree1(v); setAgree2(v);
+      };
+      const toggleAgree1 = () => {
+        const v = !agree1; setAgree1(v);
+        setAgreeAll(v && agree2);
+      };
+      const toggleAgree2 = () => {
+        const v = !agree2; setAgree2(v);
+        setAgreeAll(agree1 && v);
+      };
+
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          {/* AppBar – back only */}
+          <div style={{height:52,backgroundColor:T.white,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0}}>
+            <button onClick={onBack} style={{width:40,height:40,border:"none",background:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <path d="M3 12H21" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10 5L3 12L10 19" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Scroll area */}
+          <div ref={scrollRef} onScroll={()=>scrollRef.current&&setScrolled(scrollRef.current.scrollTop>0)}
+            style={{flex:1,overflowY:"auto"}}>
+
+            {/* Hero header */}
+            <div style={{padding:"20px 16px 16px",display:"flex",alignItems:"center",gap:12}}>
+              <img src={A.confirmAppIcon} style={{width:40,height:40,borderRadius:10,flexShrink:0,objectFit:"cover"}}/>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <p style={{margin:0,fontWeight:700,fontSize:18,letterSpacing:"-0.36px",lineHeight:"24px",color:T.primary}}>
+                  처방식 첫 구매라면 <span style={{color:T.brandDeep}}>5,000원 바로 할인</span>
+                </p>
+                <p style={{margin:0,fontWeight:400,fontSize:16,letterSpacing:"-0.32px",color:T.secondary}}>지금 시작하면 가장 이득이에요</p>
+              </div>
+            </div>
+
+            {/* Product cards */}
+            <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:8}}>
+              {displayProducts.map(p=>(
+                <div key={p.id} style={{border:`1px solid ${T.bgLight}`,borderRadius:8,padding:16,display:"flex",gap:12}}>
+                  <div style={{width:100,height:100,borderRadius:8,backgroundColor:T.disable,flexShrink:0,overflow:"hidden"}}>
+                    <img src={A.confirmThumb} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  </div>
+                  <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+                    <p style={{margin:0,fontWeight:500,fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.primary}}>{p.name}</p>
+                    <div style={{display:"flex",gap:4,alignItems:"center",marginTop:4}}>
+                      <span style={{fontWeight:500,fontSize:12,letterSpacing:"-0.24px",color:T.red}}>쿠폰 적용가</span>
+                      <span style={{fontWeight:400,fontSize:12,color:T.tertiary,textDecoration:"line-through"}}>{p.original}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"baseline",gap:2,marginTop:2}}>
+                      <span style={{fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.red}}>{p.discount}%</span>
+                      <span style={{fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>{p.price}</span>
+                      <span style={{fontWeight:400,fontSize:14,color:T.primary}}>원</span>
+                    </div>
+                    <div style={{display:"inline-flex",alignItems:"center",gap:3,border:`1px solid ${T.brandBorder}`,borderRadius:4,padding:"2px 6px",marginTop:5,alignSelf:"flex-start"}}>
+                      <span style={{fontWeight:700,fontSize:10,letterSpacing:"-0.2px",color:T.brandDeep}}>{p.coupon}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:3,marginTop:5}}>
+                      <Stars n={p.rating}/>
+                      <span style={{fontWeight:400,fontSize:12,color:T.tertiary}}>({p.reviews})</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Benefit section */}
+            <div style={{padding:"20px 16px 0"}}>
+              <p style={{margin:"0 0 12px",fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>펫프렌즈에서 구매하면</p>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{backgroundColor:"#FFF9FB",border:"1px solid #FFDFEA",borderRadius:8,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
+                  <img src={A.confirmCoupon} style={{width:40,height:40,flexShrink:0,objectFit:"contain"}}/>
+                  <div>
+                    <p style={{margin:0,fontWeight:700,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>5,000원 할인 쿠폰 자동 적용</p>
+                    <p style={{margin:"2px 0 0",fontWeight:400,fontSize:12,letterSpacing:"-0.24px",color:T.secondary}}>처방식 첫 구매 고객에게 즉시 지급</p>
+                  </div>
+                </div>
+                <div style={{backgroundColor:"#FFF9FB",border:"1px solid #FFDFEA",borderRadius:8,padding:"14px",display:"flex",alignItems:"center",gap:12}}>
+                  <img src={A.confirmDelivery} style={{width:40,height:40,flexShrink:0,objectFit:"contain"}}/>
+                  <div>
+                    <p style={{margin:0,fontWeight:700,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>2시간 13분 55초 내 주문 시</p>
+                    <p style={{margin:"2px 0 0",fontWeight:400,fontSize:12,letterSpacing:"-0.24px",color:T.secondary}}>내일 새벽 7시 전에 도착</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Terms section */}
+            <div style={{padding:"20px 16px 32px"}}>
+              {/* Master row */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAll}>
+                  <Checkbox checked={agreeAll} onChange={toggleAll}/>
+                  <span style={{fontWeight:700,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>모든 약관에 동의합니다.</span>
+                </div>
+                <button onClick={()=>setExpanded(p=>!p)} style={{border:"none",background:"none",cursor:"pointer",padding:2,display:"flex",alignItems:"center"}}>
+                  <svg width={20} height={20} viewBox="0 0 20 20" fill="none"
+                    style={{transition:"transform .2s",transform:expanded?"rotate(180deg)":"rotate(0deg)"}}>
+                    <path d="M5 7.5l5 5 5-5" stroke={T.secondary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              {/* Sub-terms */}
+              {expanded && (
+                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:12,paddingLeft:2}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAgree1}>
+                    <Checkbox checked={agree1} onChange={toggleAgree1}/>
+                    <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 처방식 구매 정보 제공 동의</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAgree2}>
+                    <Checkbox checked={agree2} onChange={toggleAgree2}/>
+                    <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 개인 정보 수집 및 이용 동의</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed CTA */}
+          <div style={{flexShrink:0,backgroundColor:T.white,
+            boxShadow:scrolled?"0 -4px 20px rgba(0,0,0,.1)":"0 -1px 0 #E9EBEC",transition:"box-shadow .2s"}}>
+            <div style={{padding:"10px 16px"}}>
+              <button style={{
+                width:"100%",height:48,borderRadius:6,border:"none",
+                cursor:ctaEnabled?"pointer":"default",
+                backgroundColor:ctaEnabled?T.brand:T.bgLight,
+                fontWeight:700,fontSize:14,letterSpacing:"-0.28px",
+                color:ctaEnabled?T.white:T.hint,transition:"all .2s",fontFamily:F,
+              }}>카카오톡으로 안내 받기</button>
+            </div>
+            <div style={{height:28,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{width:134,height:5,borderRadius:100,backgroundColor:"#000",opacity:.18}}/>
+            </div>
+          </div>
         </div>
       );
     }
@@ -544,8 +705,19 @@
     // ── App Shell
     function App() {
       const [tab, setTab]       = useState("login");
-      const [loggedIn, setLoggedIn] = useState(false);
-      const tabs = [["login","로그인"],["prescription","처방 화면"],["dialog","Dialog"]];
+      const [screen, setScreen] = useState("login"); // login | prescription | confirm
+      const [selectedIds, setSelectedIds] = useState(new Set());
+
+      const tabs = [["login","로그인"],["prescription","처방 화면"],["confirm","처방확인"],["dialog","Dialog"]];
+
+      const screenLabel = {
+        login: "이메일 로그인 · 375×812",
+        prescription: "로그인 완료 → 처방 화면",
+        confirm: "처방 확인 · 약관 동의",
+      }[screen] || "";
+
+      const handleNext = (ids) => { setSelectedIds(new Set(ids)); setScreen("confirm"); };
+
       return (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
           <div className="tabs">
@@ -557,16 +729,15 @@
           {tab==="login" && (
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
               <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
-                {loggedIn?"로그인 완료 → 처방 화면":"이메일 로그인 · 375×812"}
+                {screenLabel}
               </p>
               <div className="device">
-                {loggedIn
-                  ? <PrescriptionPage/>
-                  : <LoginPage onLogin={()=>setLoggedIn(true)}/>
-                }
+                {screen==="login"        && <LoginPage onLogin={()=>setScreen("prescription")}/>}
+                {screen==="prescription" && <PrescriptionPage onNext={handleNext}/>}
+                {screen==="confirm"      && <ConfirmPage products={PRODUCTS.filter(p=>selectedIds.has(p.id))} onBack={()=>setScreen("prescription")}/>}
               </div>
-              {loggedIn && (
-                <button onClick={()=>setLoggedIn(false)}
+              {screen!=="login" && (
+                <button onClick={()=>setScreen("login")}
                   style={{marginTop:8,fontSize:12,color:"#999",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
                   ← 로그인 화면으로
                 </button>
@@ -583,6 +754,19 @@
               <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
                 이름 + 휴대폰 번호 입력 후 상품 선택 → CTA 활성화<br/>
                 상품 선택 → 하단 선택바 노출 &nbsp;|&nbsp; 스크롤 → 플로팅 그림자
+              </p>
+            </div>
+          )}
+
+          {tab==="confirm" && (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+              <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
+                처방확인 · 375×812 · 약관 동의
+              </p>
+              <div className="device"><ConfirmPage products={PRODUCTS.slice(0,2)}/></div>
+              <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
+                모든 약관 동의 → 카카오톡 안내 CTA 활성화<br/>
+                화살표 클릭 → 약관 펼치기/접기
               </p>
             </div>
           )}
