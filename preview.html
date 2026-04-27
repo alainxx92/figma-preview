@@ -36,6 +36,7 @@
     button { font-family: inherit; }
     ::-webkit-scrollbar { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   </style>
 </head>
 <body>
@@ -433,7 +434,7 @@
     }
 
     // ── Confirm Page
-    function ConfirmPage({ products, onBack, name="", phone="" }) {
+    function ConfirmPage({ products, onBack, onSend, name="", phone="" }) {
       const [agreeAll, setAgreeAll] = useState(false);
       const [agree1, setAgree1]     = useState(false);
       const [agree2, setAgree2]     = useState(false);
@@ -673,7 +674,7 @@
                     fontWeight:400,fontSize:14,letterSpacing:"-0.28px",color:T.primary,fontFamily:F,
                   }}>취소</button>
                   <div style={{width:1,backgroundColor:T.border,flexShrink:0}}/>
-                  <button onClick={()=>{ setShowModal(false); if(onBack) onBack(); }} style={{
+                  <button onClick={()=>{ setShowModal(false); if(onSend) onSend(); else if(onBack) onBack(); }} style={{
                     flex:1,height:48,border:"none",background:"none",cursor:"pointer",
                     fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:T.primary,fontFamily:F,
                   }}>보내기</button>
@@ -804,8 +805,19 @@
       const [pScreen, setPScreen] = useState("prescription"); // prescription | confirm
       const [selIds, setSelIds]   = useState(new Set());
       const [userInfo, setUserInfo] = useState({name:"",phone:""});
+      const [toast, setToast]     = useState(false);
+      const toastTimer            = useRef(null);
+
+      const triggerToast = () => {
+        setToast(true);
+        if(toastTimer.current) clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(false), 3000);
+      };
+
+      const handleSend = () => { setPScreen("prescription"); triggerToast(); };
+
       return (
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,position:"relative"}}>
           <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
             {pScreen==="prescription"?"병원상담 신청 · 375×812 · 3-state interactive":"처방 확인 · 약관 동의"}
           </p>
@@ -814,7 +826,7 @@
               <PrescriptionPage onNext={({ids,name,phone})=>{ setSelIds(new Set(ids)); setUserInfo({name,phone}); setPScreen("confirm"); }}/>
             )}
             {pScreen==="confirm" && (
-              <ConfirmPage products={PRODUCTS.filter(p=>selIds.has(p.id))} onBack={()=>setPScreen("prescription")} name={userInfo.name} phone={userInfo.phone}/>
+              <ConfirmPage products={PRODUCTS.filter(p=>selIds.has(p.id))} onBack={()=>setPScreen("prescription")} onSend={handleSend} name={userInfo.name} phone={userInfo.phone}/>
             )}
           </div>
           {pScreen==="confirm" && (
@@ -822,6 +834,16 @@
               style={{marginTop:8,fontSize:12,color:"#999",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
               ← 처방 화면으로
             </button>
+          )}
+          {/* 토스트 */}
+          {toast && (
+            <div style={{position:"fixed",bottom:100,left:0,right:0,display:"flex",justifyContent:"center",zIndex:9999,pointerEvents:"none"}}>
+              <div style={{backgroundColor:"rgba(45,48,53,0.8)",padding:"8px 16px",borderRadius:8,
+                fontFamily:F,fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:"#F8F8F8",
+                whiteSpace:"nowrap",animation:"toastIn .2s ease-out"}}>
+                카카오톡으로 안내를 보냈어요
+              </div>
+            </div>
           )}
         </div>
       );
@@ -833,6 +855,14 @@
       const [screen, setScreen] = useState("login"); // login | prescription | confirm
       const [selectedIds, setSelectedIds] = useState(new Set());
       const [userInfo, setUserInfo] = useState({name:"",phone:""});
+      const [toast, setToast]   = useState(false);
+      const toastTimer          = useRef(null);
+
+      const triggerToast = () => {
+        setToast(true);
+        if(toastTimer.current) clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(false), 3000);
+      };
 
       const tabs = [["login","로그인"],["prescription","처방 화면"],["confirm","처방확인"],["dialog","Dialog"]];
 
@@ -843,6 +873,7 @@
       }[screen] || "";
 
       const handleNext = ({ids,name,phone}) => { setSelectedIds(new Set(ids)); setUserInfo({name,phone}); setScreen("confirm"); };
+      const handleSend  = () => { setScreen("prescription"); triggerToast(); };
 
       return (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -860,7 +891,7 @@
               <div className="device">
                 {screen==="login"        && <LoginPage onLogin={()=>setScreen("prescription")}/>}
                 {screen==="prescription" && <PrescriptionPage onNext={handleNext}/>}
-                {screen==="confirm"      && <ConfirmPage products={PRODUCTS.filter(p=>selectedIds.has(p.id))} onBack={()=>setScreen("prescription")} name={userInfo.name} phone={userInfo.phone}/>}
+                {screen==="confirm"      && <ConfirmPage products={PRODUCTS.filter(p=>selectedIds.has(p.id))} onBack={()=>setScreen("prescription")} onSend={handleSend} name={userInfo.name} phone={userInfo.phone}/>}
               </div>
               {screen!=="login" && (
                 <button onClick={()=>setScreen("login")}
@@ -880,7 +911,7 @@
               <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
                 처방확인 · 375×812 · 약관 동의
               </p>
-              <div className="device"><ConfirmPage products={PRODUCTS.slice(0,2)}/></div>
+              <div className="device"><ConfirmPage products={PRODUCTS.slice(0,2)} onSend={triggerToast}/></div>
               <p style={{fontSize:11,color:"#aaa",marginTop:8,textAlign:"center",lineHeight:1.6}}>
                 모든 약관 동의 → 카카오톡 안내 CTA 활성화<br/>
                 화살표 클릭 → 약관 펼치기/접기
@@ -893,6 +924,17 @@
               <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase"}}>Dialog · node 1461:24655</p>
               <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog/></div>
               <div style={{background:T.white,borderRadius:10,overflow:"hidden",boxShadow:"0 4px 24px rgba(0,0,0,.1)"}}><Dialog title="정말 삭제하시겠습니까?" description="삭제된 항목은 복구할 수 없습니다." a1="취소" a2="삭제"/></div>
+            </div>
+          )}
+
+          {/* 전역 토스트 (App 탭 흐름) */}
+          {toast && (
+            <div style={{position:"fixed",bottom:100,left:0,right:0,display:"flex",justifyContent:"center",zIndex:9999,pointerEvents:"none"}}>
+              <div style={{backgroundColor:"rgba(45,48,53,0.8)",padding:"8px 16px",borderRadius:8,
+                fontFamily:F,fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:"#F8F8F8",
+                whiteSpace:"nowrap",animation:"toastIn .2s ease-out"}}>
+                카카오톡으로 안내를 보냈어요
+              </div>
             </div>
           )}
         </div>
