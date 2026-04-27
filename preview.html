@@ -437,7 +437,7 @@
       const [agreeAll, setAgreeAll] = useState(false);
       const [agree1, setAgree1]     = useState(false);
       const [agree2, setAgree2]     = useState(false);
-      const [expanded, setExpanded] = useState(false);
+      const [expanded, setExpanded] = useState(true);
       const [scrolled, setScrolled] = useState(false);
       const scrollRef = useRef(null);
 
@@ -551,7 +551,7 @@
             </div>
 
             {/* Terms section */}
-            <div style={{padding:"20px 16px 32px"}}>
+            <div style={{borderTop:`1px solid ${T.border}`,padding:"20px 16px 32px"}}>
               {/* Master row */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAll}>
@@ -567,14 +567,34 @@
               </div>
               {/* Sub-terms */}
               {expanded && (
-                <div style={{marginTop:14,display:"flex",flexDirection:"column",gap:12,paddingLeft:2}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAgree1}>
-                    <Checkbox checked={agree1} onChange={toggleAgree1}/>
-                    <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 처방식 구매 정보 제공 동의</span>
+                <div style={{marginTop:8,display:"flex",flexDirection:"column"}}>
+                  {/* 구분선 */}
+                  <div style={{height:1,backgroundColor:T.border,margin:"12px 0"}}/>
+                  {/* 항목 1 */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1}} onClick={toggleAgree1}>
+                      <Checkbox checked={agree1} onChange={toggleAgree1}/>
+                      <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 처방식 구매 정보 제공 동의</span>
+                    </div>
+                    <button style={{border:"none",background:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",flexShrink:0}}>
+                      <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4l4 4-4 4" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAgree2}>
-                    <Checkbox checked={agree2} onChange={toggleAgree2}/>
-                    <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 개인 정보 수집 및 이용 동의</span>
+                  {/* 구분선 */}
+                  <div style={{height:1,backgroundColor:T.border,margin:"12px 0"}}/>
+                  {/* 항목 2 */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1}} onClick={toggleAgree2}>
+                      <Checkbox checked={agree2} onChange={toggleAgree2}/>
+                      <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 개인 정보 수집 및 이용 동의</span>
+                    </div>
+                    <button style={{border:"none",background:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",flexShrink:0}}>
+                      <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4l4 4-4 4" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               )}
