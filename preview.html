@@ -565,37 +565,60 @@
                   </svg>
                 </button>
               </div>
-              {/* Sub-terms */}
+
               {expanded && (
-                <div style={{marginTop:8,display:"flex",flexDirection:"column"}}>
-                  {/* 구분선 */}
-                  <div style={{height:1,backgroundColor:T.border,margin:"12px 0"}}/>
-                  {/* 항목 1 */}
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1}} onClick={toggleAgree1}>
+                <div style={{display:"flex",flexDirection:"column",gap:16,marginTop:16}}>
+
+                  {/* ── 개인정보 제3자 제공 동의 */}
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12}} onClick={toggleAgree1}>
                       <Checkbox checked={agree1} onChange={toggleAgree1}/>
-                      <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 처방식 구매 정보 제공 동의</span>
+                      <span style={{fontWeight:500,fontSize:13,letterSpacing:"-0.26px",color:T.primary}}>개인정보 제3자 제공 동의</span>
                     </div>
-                    <button style={{border:"none",background:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",flexShrink:0}}>
-                      <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-                        <path d="M6 4l4 4-4 4" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                    <div style={{border:`1px solid ${T.border}`,borderRadius:6,overflow:"hidden"}}>
+                      {[
+                        ["개인정보\n제공자",           "펫프렌즈(주)"],
+                        ["제공받는 자",               "처방 담당 병원"],
+                        ["제공 항목",                 "보호자 성명, 연락처, 반려동물 정보, 처방 내역"],
+                        ["제공받는 자의\n개인정보\n이용 목적", "처방식 구매 확인 및 처방 정보 검증"],
+                        ["보유 및\n이용 기간",          "목적 달성 후 즉시 파기\n(단, 법령에 따라 보관이 필요한 경우 해당 기간 보유)"],
+                        ["동의 거부\n권리 안내",         "동의를 거부하실 수 있으나, 거부 시 처방식 구매 서비스 이용이 제한됩니다."],
+                      ].map(([label, value], i, arr) => (
+                        <div key={i} style={{display:"flex",borderBottom:i<arr.length-1?`1px solid ${T.border}`:"none"}}>
+                          <div style={{width:88,padding:"10px 12px",backgroundColor:T.bgLight,flexShrink:0,fontSize:11,color:T.tertiary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
+                            {label}
+                          </div>
+                          <div style={{flex:1,padding:"10px 12px",fontSize:11,color:T.secondary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  {/* 구분선 */}
-                  <div style={{height:1,backgroundColor:T.border,margin:"12px 0"}}/>
-                  {/* 항목 2 */}
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",flex:1}} onClick={toggleAgree2}>
+
+                  {/* ── 광고성 정보 수신 동의 */}
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12}} onClick={toggleAgree2}>
                       <Checkbox checked={agree2} onChange={toggleAgree2}/>
-                      <span style={{fontWeight:400,fontSize:13,letterSpacing:"-0.26px",color:T.secondary}}>(필수) 개인 정보 수집 및 이용 동의</span>
+                      <span style={{fontWeight:500,fontSize:13,letterSpacing:"-0.26px",color:T.primary}}>광고성 정보 수신 동의</span>
                     </div>
-                    <button style={{border:"none",background:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center",flexShrink:0}}>
-                      <svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-                        <path d="M6 4l4 4-4 4" stroke={T.tertiary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                    <div style={{border:`1px solid ${T.border}`,borderRadius:6,overflow:"hidden"}}>
+                      {[
+                        ["연락방법",        "카카오톡 알림톡"],
+                        ["동의 거부\n권리 안내", "동의를 거부하실 수 있으나, 거부 시 처방식 관련 혜택 및 이벤트 안내를 받으실 수 없습니다."],
+                      ].map(([label, value], i, arr) => (
+                        <div key={i} style={{display:"flex",borderBottom:i<arr.length-1?`1px solid ${T.border}`:"none"}}>
+                          <div style={{width:88,padding:"10px 12px",backgroundColor:T.bgLight,flexShrink:0,fontSize:11,color:T.tertiary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
+                            {label}
+                          </div>
+                          <div style={{flex:1,padding:"10px 12px",fontSize:11,color:T.secondary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
                 </div>
               )}
             </div>
