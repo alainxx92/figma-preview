@@ -356,7 +356,7 @@
       },[]);
 
       const canProceed = name.trim()!=""&&phone.trim()!=""&&selected.size>0;
-      const handleNext = useCallback(()=>{ if(onNext) onNext(selected); },[onNext,selected]);
+      const handleNext = useCallback(()=>{ if(onNext) onNext({ids:selected,name,phone}); },[onNext,selected,name,phone]);
 
       const filtered = PRODUCTS.filter(p=>{
         if(search&&!p.name.includes(search)) return false;
@@ -433,12 +433,13 @@
     }
 
     // ── Confirm Page
-    function ConfirmPage({ products, onBack }) {
+    function ConfirmPage({ products, onBack, name="", phone="" }) {
       const [agreeAll, setAgreeAll] = useState(false);
       const [agree1, setAgree1]     = useState(false);
       const [agree2, setAgree2]     = useState(false);
       const [expanded, setExpanded] = useState(true);
       const [scrolled, setScrolled] = useState(false);
+      const [showModal, setShowModal] = useState(false);
       const scrollRef = useRef(null);
 
       const displayProducts = products && products.length > 0 ? products : PRODUCTS.slice(0,2);
@@ -629,7 +630,7 @@
           <div style={{flexShrink:0,backgroundColor:T.white,
             boxShadow:scrolled?"0 -4px 20px rgba(0,0,0,.1)":"0 -1px 0 #E9EBEC",transition:"box-shadow .2s"}}>
             <div style={{padding:"10px 16px"}}>
-              <button style={{
+              <button onClick={()=>{ if(ctaEnabled) setShowModal(true); }} style={{
                 width:"100%",height:48,borderRadius:6,border:"none",
                 cursor:ctaEnabled?"pointer":"default",
                 backgroundColor:ctaEnabled?T.brand:T.bgLight,
@@ -641,6 +642,45 @@
               <div style={{width:134,height:5,borderRadius:100,backgroundColor:"#000",opacity:.18}}/>
             </div>
           </div>
+
+          {/* 카카오톡 발송 확인 모달 */}
+          {showModal && (
+            <div style={{
+              position:"fixed",inset:0,zIndex:300,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              backgroundColor:"rgba(28,30,33,0.6)",
+            }}>
+              <div style={{
+                width:295,backgroundColor:T.white,borderRadius:10,
+                display:"flex",flexDirection:"column",overflow:"hidden",
+              }}>
+                {/* Body */}
+                <div style={{padding:"28px 10px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <p style={{
+                    margin:0,width:247,textAlign:"center",
+                    fontWeight:500,fontSize:16,lineHeight:"normal",
+                    letterSpacing:"-0.32px",color:T.primary,
+                  }}>
+                    {name||"고객"} 님 ({phone||"-"})에게 처방 사료 구매 안내를 발송하고 입력 정보는 초기화돼요.
+                  </p>
+                </div>
+                {/* 구분선 */}
+                <div style={{height:1,backgroundColor:T.border}}/>
+                {/* 액션 버튼 */}
+                <div style={{display:"flex"}}>
+                  <button onClick={()=>setShowModal(false)} style={{
+                    flex:1,height:48,border:"none",background:"none",cursor:"pointer",
+                    fontWeight:400,fontSize:14,letterSpacing:"-0.28px",color:T.primary,fontFamily:F,
+                  }}>취소</button>
+                  <div style={{width:1,backgroundColor:T.border,flexShrink:0}}/>
+                  <button onClick={()=>{ setShowModal(false); if(onBack) onBack(); }} style={{
+                    flex:1,height:48,border:"none",background:"none",cursor:"pointer",
+                    fontWeight:500,fontSize:14,letterSpacing:"-0.28px",color:T.primary,fontFamily:F,
+                  }}>보내기</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -763,6 +803,7 @@
     function PrescriptionTab() {
       const [pScreen, setPScreen] = useState("prescription"); // prescription | confirm
       const [selIds, setSelIds]   = useState(new Set());
+      const [userInfo, setUserInfo] = useState({name:"",phone:""});
       return (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
           <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>
@@ -770,10 +811,10 @@
           </p>
           <div className="device">
             {pScreen==="prescription" && (
-              <PrescriptionPage onNext={(ids)=>{ setSelIds(new Set(ids)); setPScreen("confirm"); }}/>
+              <PrescriptionPage onNext={({ids,name,phone})=>{ setSelIds(new Set(ids)); setUserInfo({name,phone}); setPScreen("confirm"); }}/>
             )}
             {pScreen==="confirm" && (
-              <ConfirmPage products={PRODUCTS.filter(p=>selIds.has(p.id))} onBack={()=>setPScreen("prescription")}/>
+              <ConfirmPage products={PRODUCTS.filter(p=>selIds.has(p.id))} onBack={()=>setPScreen("prescription")} name={userInfo.name} phone={userInfo.phone}/>
             )}
           </div>
           {pScreen==="confirm" && (
@@ -791,6 +832,7 @@
       const [tab, setTab]       = useState("login");
       const [screen, setScreen] = useState("login"); // login | prescription | confirm
       const [selectedIds, setSelectedIds] = useState(new Set());
+      const [userInfo, setUserInfo] = useState({name:"",phone:""});
 
       const tabs = [["login","로그인"],["prescription","처방 화면"],["confirm","처방확인"],["dialog","Dialog"]];
 
@@ -800,7 +842,7 @@
         confirm: "처방 확인 · 약관 동의",
       }[screen] || "";
 
-      const handleNext = (ids) => { setSelectedIds(new Set(ids)); setScreen("confirm"); };
+      const handleNext = ({ids,name,phone}) => { setSelectedIds(new Set(ids)); setUserInfo({name,phone}); setScreen("confirm"); };
 
       return (
         <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
@@ -818,7 +860,7 @@
               <div className="device">
                 {screen==="login"        && <LoginPage onLogin={()=>setScreen("prescription")}/>}
                 {screen==="prescription" && <PrescriptionPage onNext={handleNext}/>}
-                {screen==="confirm"      && <ConfirmPage products={PRODUCTS.filter(p=>selectedIds.has(p.id))} onBack={()=>setScreen("prescription")}/>}
+                {screen==="confirm"      && <ConfirmPage products={PRODUCTS.filter(p=>selectedIds.has(p.id))} onBack={()=>setScreen("prescription")} name={userInfo.name} phone={userInfo.phone}/>}
               </div>
               {screen!=="login" && (
                 <button onClick={()=>setScreen("login")}
