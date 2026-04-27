@@ -551,15 +551,15 @@
             </div>
 
             {/* Terms section */}
-            <div style={{borderTop:`1px solid ${T.border}`,padding:"20px 16px 32px"}}>
-              {/* Master row */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={toggleAll}>
+            <div style={{borderTop:`1px solid ${T.border}`}}>
+              {/* Master row – 40px height */}
+              <div style={{height:40,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}} onClick={toggleAll}>
                   <Checkbox checked={agreeAll} onChange={toggleAll}/>
                   <span style={{fontWeight:700,fontSize:14,letterSpacing:"-0.28px",color:T.primary}}>모든 약관에 동의합니다.</span>
                 </div>
-                <button onClick={()=>setExpanded(p=>!p)} style={{border:"none",background:"none",cursor:"pointer",padding:2,display:"flex",alignItems:"center"}}>
-                  <svg width={20} height={20} viewBox="0 0 20 20" fill="none"
+                <button onClick={()=>setExpanded(p=>!p)} style={{border:"none",background:"none",cursor:"pointer",padding:10,display:"flex",alignItems:"center"}}>
+                  <svg width={18} height={18} viewBox="0 0 20 20" fill="none"
                     style={{transition:"transform .2s",transform:expanded?"rotate(180deg)":"rotate(0deg)"}}>
                     <path d="M5 7.5l5 5 5-5" stroke={T.secondary} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -567,58 +567,54 @@
               </div>
 
               {expanded && (
-                <div style={{display:"flex",flexDirection:"column",gap:16,marginTop:16}}>
+                <div style={{display:"flex",flexDirection:"column",padding:"0 16px 8px"}}>
 
                   {/* ── 개인정보 제3자 제공 동의 */}
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12}} onClick={toggleAgree1}>
-                      <Checkbox checked={agree1} onChange={toggleAgree1}/>
-                      <span style={{fontWeight:500,fontSize:13,letterSpacing:"-0.26px",color:T.primary}}>개인정보 제3자 제공 동의</span>
-                    </div>
-                    <div style={{border:`1px solid ${T.border}`,borderRadius:6,overflow:"hidden"}}>
-                      {[
-                        ["개인정보\n제공자",           "펫프렌즈(주)"],
-                        ["제공받는 자",               "처방 담당 병원"],
-                        ["제공 항목",                 "보호자 성명, 연락처, 반려동물 정보, 처방 내역"],
-                        ["제공받는 자의\n개인정보\n이용 목적", "처방식 구매 확인 및 처방 정보 검증"],
-                        ["보유 및\n이용 기간",          "목적 달성 후 즉시 파기\n(단, 법령에 따라 보관이 필요한 경우 해당 기간 보유)"],
-                        ["동의 거부\n권리 안내",         "동의를 거부하실 수 있으나, 거부 시 처방식 구매 서비스 이용이 제한됩니다."],
-                      ].map(([label, value], i, arr) => (
-                        <div key={i} style={{display:"flex",borderBottom:i<arr.length-1?`1px solid ${T.border}`:"none"}}>
-                          <div style={{width:88,padding:"10px 12px",backgroundColor:T.bgLight,flexShrink:0,fontSize:11,color:T.tertiary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
-                            {label}
-                          </div>
-                          <div style={{flex:1,padding:"10px 12px",fontSize:11,color:T.secondary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
-                            {value}
-                          </div>
-                        </div>
-                      ))}
+                  <div style={{display:"flex",gap:4,alignItems:"flex-start",width:"100%"}}>
+                    <div style={{flexShrink:0}} onClick={toggleAgree1}><Checkbox checked={agree1} onChange={toggleAgree1}/></div>
+                    <div style={{flex:1,display:"flex",flexDirection:"column",gap:4,minWidth:0}}>
+                      <div style={{minHeight:24,display:"flex",alignItems:"center",cursor:"pointer"}} onClick={toggleAgree1}>
+                        <span style={{fontWeight:700,fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.secondary}}>개인정보 제3자 제공 동의</span>
+                      </div>
+                      <div style={{fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.secondary}}>
+                        <p style={{margin:0,fontWeight:700}}>개인정보 제공자</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>VIP동물병원</li></ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>제공받는 자</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>㈜펫프렌즈</li></ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>제공 항목</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>성명, 전화번호, 처방 일시 정보</li></ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>제공받는 자의 개인정보 이용 목적</p>
+                        <ul style={{margin:0,paddingLeft:20}}>
+                          <li>이용자 식별 및 서비스 이용 본인 의사 확인</li>
+                          <li>서비스 안내를 위한 광고성 브랜드 메시지 발송</li>
+                        </ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>보유 및 이용 기간</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>제공일로부터 1년 또는 동의 철회 시까지</li></ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>동의 거부 권리 안내</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>동의를 거부하실 수 있으나, 동의하지 않으실 경우 처방식 주문/배송 서비스 제공이 불가할 수 있습니다.</li></ul>
+                      </div>
                     </div>
                   </div>
 
                   {/* ── 광고성 정보 수신 동의 */}
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12}} onClick={toggleAgree2}>
-                      <Checkbox checked={agree2} onChange={toggleAgree2}/>
-                      <span style={{fontWeight:500,fontSize:13,letterSpacing:"-0.26px",color:T.primary}}>광고성 정보 수신 동의</span>
-                    </div>
-                    <div style={{border:`1px solid ${T.border}`,borderRadius:6,overflow:"hidden"}}>
-                      {[
-                        ["연락방법",        "카카오톡 알림톡"],
-                        ["동의 거부\n권리 안내", "동의를 거부하실 수 있으나, 거부 시 처방식 관련 혜택 및 이벤트 안내를 받으실 수 없습니다."],
-                      ].map(([label, value], i, arr) => (
-                        <div key={i} style={{display:"flex",borderBottom:i<arr.length-1?`1px solid ${T.border}`:"none"}}>
-                          <div style={{width:88,padding:"10px 12px",backgroundColor:T.bgLight,flexShrink:0,fontSize:11,color:T.tertiary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
-                            {label}
-                          </div>
-                          <div style={{flex:1,padding:"10px 12px",fontSize:11,color:T.secondary,letterSpacing:"-0.22px",lineHeight:"16px",whiteSpace:"pre-line"}}>
-                            {value}
-                          </div>
-                        </div>
-                      ))}
+                  <div style={{display:"flex",gap:4,alignItems:"flex-start",width:"100%"}}>
+                    <div style={{flexShrink:0}} onClick={toggleAgree2}><Checkbox checked={agree2} onChange={toggleAgree2}/></div>
+                    <div style={{flex:1,display:"flex",flexDirection:"column",gap:4,minWidth:0}}>
+                      <div style={{minHeight:24,display:"flex",alignItems:"center",cursor:"pointer"}} onClick={toggleAgree2}>
+                        <span style={{fontWeight:700,fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.secondary}}>광고성 정보 수신 동의</span>
+                      </div>
+                      <div style={{fontSize:13,lineHeight:"18px",letterSpacing:"-0.26px",color:T.secondary}}>
+                        <p style={{margin:0,fontWeight:400}}>신청하신 주문/배송 서비스 알림을 위한 메시지 발송의 용도로만 사용됩니다.</p>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>연락방법</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>카카오톡 브랜드 메시지</li></ul>
+                        <p style={{margin:"4px 0 0",fontWeight:700}}>동의 거부 권리 안내</p>
+                        <ul style={{margin:0,paddingLeft:20}}><li>동의를 거부하실 수 있으며, 거부 시 처방식 주문/배송 서비스 제공을 위한 알림 수신이 불가할 수 있습니다.</li></ul>
+                      </div>
                     </div>
                   </div>
 
+                  {/* CTA 높이 확보 spacer */}
+                  <div style={{height:142,flexShrink:0}}/>
                 </div>
               )}
             </div>
