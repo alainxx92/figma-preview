@@ -72,7 +72,28 @@
       confirmThumb:    "https://www.figma.com/api/mcp/asset/f0a6a26b-b28e-4d9f-9e74-6c99f0f6173f",
       confirmCoupon:   "https://www.figma.com/api/mcp/asset/616677f6-cad8-437d-88d0-b8ba7e6d2673",
       confirmDelivery: "https://www.figma.com/api/mcp/asset/6ba79ae4-83ee-412d-86fc-d9ea80fd45b9",
+      // 처방식 주문 플로우 (카카오→로그인→주문/결제)
+      kakaoProfilePic: "https://www.figma.com/api/mcp/asset/4a028c87-f582-4de5-8161-d00d888ca515.png",
+      kakaoCard:       "https://www.figma.com/api/mcp/asset/f8966332-959a-46be-a841-cce60af3415e.png",
+      kakaoLogo:       "https://www.figma.com/api/mcp/asset/10e1b566-d5d7-4a2c-988c-cc6243bd158f.svg",
+      naverLogo:       "https://www.figma.com/api/mcp/asset/31134041-e0f3-4ae5-b506-c400f360751f.svg",
+      appleLogo:       "https://www.figma.com/api/mcp/asset/87a00d3a-2cfa-4319-9876-5481abee732e.svg",
+      loginCat:        "https://www.figma.com/api/mcp/asset/faea0e5e-3dc5-4590-9536-be8705b2890b.png",
+      naverMap:        "https://www.figma.com/api/mcp/asset/b0adf7a4-cc67-42b6-b284-f337a773e5a4.png",
+      orderThumb1:     "https://www.figma.com/api/mcp/asset/90a1ae87-17d3-471c-b7ee-040215413602",
+      orderThumb2:     "https://www.figma.com/api/mcp/asset/63d5770f-a94c-4a75-b106-a04978f82a51",
     };
+
+    // ── 처방식 주문 플로우 전용 상품 데이터
+    const CART_A = [ // 정보 입력된 기존회원 (수령인 있음)
+      {id:1,name:"퓨리나 원 캣 인도어 1.4kg",qty:1,discount:10,price:"37,800",original:"39,700원",coupon:"20% 쿠폰 적용됨",note:"최대 292원 적립"},
+      {id:2,name:"퓨리나 원 캣 인도어 1.4kg",qty:1,discount:10,price:"17,800",original:"19,700원",coupon:"20% 쿠폰 적용됨",note:"최대 292원 적립"},
+      {id:3,name:"바이탈쉴드 올인원 이뮨샷 모음",qty:1,discount:0,price:"17,800",original:"",coupon:"",note:"일시품절"},
+    ];
+    const CART_B = [ // 신규/미인증 유저
+      {id:1,name:"로얄캐닌 캣 하이포알러제닉 2.5kg",qty:1,discount:10,price:"44,700",original:"49,700원",coupon:"5,000원 쿠폰 적용됨",note:"최대 292원 적립"},
+      {id:2,name:"로얄캐닌 캣 하이포알러제닉 2.5kg",qty:1,discount:10,price:"44,700",original:"49,700원",coupon:"5,000원 쿠폰 적용됨",note:"최대 292원 적립"},
+    ];
 
     // ── Data
     const BRANDS = [
@@ -708,6 +729,491 @@
       );
     }
 
+    // ══ 처방식 주문 플로우 (카카오 알림톡 → 로그인 → 장바구니 → 휴대폰인증 → 주소 → 결제)
+    function OrderAppBar({ title, onBack }) {
+      return (
+        <div style={{height:52,backgroundColor:T.white,display:"flex",alignItems:"center",padding:"0 8px",flexShrink:0,position:"relative"}}>
+          <button onClick={onBack} style={{width:40,height:40,border:"none",background:"none",cursor:onBack?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {onBack && <svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+              <path d="M3 12H21" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 5L3 12L10 19" stroke={T.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>}
+          </button>
+          {title && <span style={{position:"absolute",left:"50%",transform:"translateX(-50%)",fontWeight:700,fontSize:16,letterSpacing:"-0.32px",color:T.primary}}>{title}</span>}
+        </div>
+      );
+    }
+
+    function HomeIndicator() {
+      return <div style={{flexShrink:0,height:28,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{width:134,height:5,borderRadius:100,backgroundColor:"#000",opacity:.18}}/>
+      </div>;
+    }
+
+    // ── 1. 카카오톡 처방 알림 메시지
+    function KakaoMessageScreen({ onOrder, onNoApp }) {
+      return (
+        <div style={{width:375,height:812,backgroundColor:"#AFC0CF",fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{height:88,backgroundColor:"rgba(175,192,207,0.96)",display:"flex",flexDirection:"column",justifyContent:"flex-end",flexShrink:0}}>
+            <div style={{height:42,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px"}}>
+              <span style={{fontWeight:500,fontSize:16,color:"#000"}}>02:31</span>
+              <span style={{fontSize:11,color:"#000"}}>●●● ▲ 🔋</span>
+            </div>
+            <div style={{height:46,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+              <span style={{position:"absolute",left:19,fontSize:17,color:"#000"}}>&larr; 540</span>
+              <span style={{fontWeight:500,fontSize:18,color:"#000"}}>펫프렌즈</span>
+            </div>
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"16px 9px 0 10px"}}>
+            <div style={{display:"flex",gap:7,alignItems:"flex-start"}}>
+              <img src={A.kakaoProfilePic} alt="" style={{width:34,height:34,borderRadius:13,border:"0.4px solid rgba(0,0,0,0.2)",flexShrink:0}}/>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                <span style={{fontSize:12,color:"rgba(0,0,0,0.5)"}}>펫프렌즈</span>
+                <div style={{width:260,borderRadius:"12px 12px 0 0",overflow:"hidden"}}>
+                  <img src={A.kakaoCard} alt="수의사가 처방한 사료, 집에서 받아보세요" style={{width:260,display:"block"}}/>
+                </div>
+                <div style={{width:260,backgroundColor:"#fff",borderRadius:"0 0 12px 12px",padding:10,display:"flex",flexDirection:"column",gap:10}}>
+                  <p style={{margin:0,fontSize:13,lineHeight:"18px",color:"#282A2B",whiteSpace:"pre-wrap"}}>
+                    [처방 상품 안내]{"\n"}- 보호자 이름: 홍도경{"\n"}- 처방 상품: 로얄캐닌 캣 하이포알러제닉 2.5kg{"\n\n"}
+                    안녕하세요. 펫프렌즈동물병원입니다.{"\n\n"}
+                    아이의 건강 관리를 위해 처방 상품과 급여 방법을 확인하신 후 급여해 주시기 바랍니다.{"\n\n"}
+                    지금 안내해 드린 처방 상품을 확인하시면 5천원의 구매 지원 혜택을 제공해 드리고 있습니다.
+                  </p>
+                  <button onClick={onOrder} style={{backgroundColor:"#F1F1F1",border:"none",borderRadius:8,height:32,width:240,fontSize:13,color:"#282A2B",cursor:"pointer",fontFamily:F}}>
+                    펫프렌즈에서 주문하기
+                  </button>
+                </div>
+                <button onClick={onNoApp} style={{background:"none",border:"none",padding:0,marginTop:2,fontSize:11,color:"rgba(0,0,0,0.45)",textDecoration:"underline",cursor:"pointer",fontFamily:F}}>
+                  앱이 설치되어 있지 않다면?
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style={{height:60,backgroundColor:"rgba(255,255,255,0.9)",display:"flex",alignItems:"center",padding:"0 10px",flexShrink:0}}>
+            <div style={{flex:1,height:36,backgroundColor:"#fff",borderRadius:18,display:"flex",alignItems:"center",padding:"0 14px",color:"#c6c9ce",fontSize:13}}>챗봇에게 메시지 입력</div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── 2. 앱스토어 (앱 미설치)
+    function AppStoreScreen({ onInstall }) {
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.bgLight,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden",alignItems:"center",justifyContent:"center",gap:24,padding:24,textAlign:"center"}}>
+          <span style={{fontWeight:700,fontSize:28,color:T.primary}}>앱스토어</span>
+          <span style={{fontSize:14,color:T.secondary}}>펫프렌즈 앱이 설치되어 있지 않아요.{"\n"}설치 후 알림톡을 다시 확인해주세요.</span>
+          <button onClick={onInstall} style={{marginTop:8,width:200,height:48,borderRadius:6,border:"none",backgroundColor:T.brand,color:T.white,fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:F}}>
+            설치하기
+          </button>
+        </div>
+      );
+    }
+
+    // ── 3. 장바구니 (hasInfo: 기존회원 수령인정보 표기 여부)
+    function OrderCartScreen({ hasInfo, items, onNext, onLeaveAttempt }) {
+      const total = items.reduce((s,it)=> s + (it.price? parseInt(it.price.replace(/,/g,"")):0), 0);
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          <OrderAppBar title="장바구니" onBack={hasInfo?onLeaveAttempt:undefined}/>
+          <div style={{flex:1,overflowY:"auto"}}>
+            {hasInfo && (
+              <div style={{padding:"16px 16px 0"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,fontSize:14,fontWeight:700,color:T.primary}}>
+                  <span>홍도경</span><span style={{color:T.border}}>|</span><span>010-9206-3677</span>
+                </div>
+                <div style={{marginTop:10,fontSize:13,color:T.secondary,display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                  <span>서울특별시 강남구 도산대로4길 15 (논현동) 5층</span>
+                  <button style={{flexShrink:0,border:`1px solid ${T.border}`,borderRadius:6,background:"none",fontSize:12,color:T.secondary,padding:"6px 10px",cursor:"pointer",fontFamily:F}}>정보 변경</button>
+                </div>
+              </div>
+            )}
+            <div style={{padding:16,display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <Checkbox checked={true} onChange={()=>{}}/>
+                <span style={{fontSize:13,color:T.secondary}}>전체선택</span>
+                <span style={{marginLeft:"auto",fontSize:12,color:T.tertiary}}>전체삭제</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6,fontWeight:700,fontSize:14,color:T.primary,marginBottom:4}}>
+                <span style={{color:T.brand}}>♥</span><span>심쿵배송 상품 {items.length}</span>
+              </div>
+              {items.map(it=>(
+                <div key={it.id} style={{display:"flex",gap:10,padding:"12px 0",borderBottom:`1px solid ${T.border}`}}>
+                  <Checkbox checked={it.note!=="일시품절"} onChange={()=>{}}/>
+                  <div style={{width:64,height:64,borderRadius:6,backgroundColor:T.bgLight,flexShrink:0,backgroundImage:`url(${A.orderThumb1})`,backgroundSize:"cover",backgroundPosition:"center"}}/>
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                    <span style={{fontSize:13,color:T.primary,lineHeight:"18px"}}>{it.name}</span>
+                    {it.note==="일시품절" ? (
+                      <span style={{fontSize:12,color:T.tertiary}}>일시품절</span>
+                    ) : (
+                      <>
+                        <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                          <span style={{color:T.brand,fontWeight:700,fontSize:13}}>{it.discount}%</span>
+                          <span style={{fontWeight:700,fontSize:15,color:T.primary}}>{it.price}원</span>
+                        </div>
+                        {it.original && <span style={{fontSize:11,color:T.hint,textDecoration:"line-through"}}>{it.original}</span>}
+                        {it.coupon && <span style={{fontSize:11,color:T.brand,backgroundColor:"#FFF1F6",borderRadius:4,padding:"2px 6px",width:"fit-content"}}>{it.coupon}</span>}
+                        <span style={{display:"flex",gap:4}}>
+                          <span style={{fontSize:10,color:"#fff",backgroundColor:T.brand,borderRadius:4,padding:"2px 6px"}}>심쿵배송</span>
+                          <span style={{fontSize:10,color:T.secondary,border:`1px solid ${T.border}`,borderRadius:4,padding:"2px 6px"}}>무료배송</span>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {!hasInfo && (
+                <div style={{marginTop:8,backgroundColor:"#FFF7E8",borderRadius:8,padding:"10px 12px",fontSize:12,color:"#8A6A1F"}}>
+                  🎁 첫구매 시 다음달 더 많은 적립 혜택을 받을 수 있어요!
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{flexShrink:0,padding:16,borderTop:`1px solid ${T.border}`}}>
+            <button onClick={onNext} style={{width:"100%",height:48,borderRadius:6,border:"none",backgroundColor:T.brand,color:T.white,fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <span>주문하기</span><span>{total.toLocaleString()}원</span>
+            </button>
+          </div>
+          <HomeIndicator/>
+        </div>
+      );
+    }
+
+    // ── 3-1. 장바구니 이탈방지 모달 (기존회원 플로우)
+    function ExitIntentModal({ onStay, onLeave }) {
+      return (
+        <div style={{position:"absolute",inset:0,backgroundColor:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50}}>
+          <div style={{width:295,backgroundColor:T.white,borderRadius:12,padding:"24px 20px",display:"flex",flexDirection:"column",gap:16,textAlign:"center",fontFamily:F}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
+              <span style={{fontWeight:700,fontSize:16,color:T.primary}}>잠깐!{"\n"}지금 나가면 혜택을 받을 수 없어요</span>
+              <span style={{fontSize:13,color:T.secondary,marginTop:6}}>이 화면에서 주문을 완료해야{"\n"}처방식 무료배송 혜택이 적용돼요</span>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={onLeave} style={{flex:1,height:44,borderRadius:6,border:`1px solid ${T.border}`,background:"none",color:T.secondary,fontSize:14,cursor:"pointer",fontFamily:F}}>나가기</button>
+              <button onClick={onStay} style={{flex:1,height:44,borderRadius:6,border:"none",backgroundColor:T.brand,color:T.white,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:F}}>계속 쇼핑할게요</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── 4. 로그인/회원가입 (소셜)
+    function OrderLoginScreen({ onLogin }) {
+      const [loading, setLoading] = useState(false);
+      const handle = () => { setLoading(true); setTimeout(()=>{ setLoading(false); onLogin(); }, 800); };
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+          <StatusBar/>
+          <OrderAppBar onBack={()=>{}}/>
+          <div style={{flex:1,position:"relative",padding:"0 16px"}}>
+            <div style={{marginTop:62,textAlign:"center",display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontWeight:700,fontSize:24,color:T.primary}}>지금 가입하면 5천원 즉시할인!</span>
+              <span style={{fontSize:16,color:T.primary}}>우리 냥님 맘마쇼핑 시작해볼까요?</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"center",marginTop:20}}>
+              <img src={A.loginCat} alt="" style={{width:130,height:96,objectFit:"contain"}}/>
+            </div>
+            <div style={{marginTop:16,display:"flex",justifyContent:"center"}}>
+              <div style={{backgroundColor:T.primary,color:T.white,fontSize:12,fontWeight:700,borderRadius:8,padding:"8px 14px",position:"relative"}}>
+                5초만에 빠른 회원가입
+              </div>
+            </div>
+            <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:10}}>
+              <button onClick={handle} style={{height:50,borderRadius:6,border:"none",backgroundColor:"#F6E24B",display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:F,fontWeight:700,fontSize:16,color:"#000"}}>
+                <img src={A.kakaoLogo} alt="" style={{width:18,height:18}}/> 카카오톡으로 시작하기
+              </button>
+              <button onClick={handle} style={{height:50,borderRadius:6,border:"none",backgroundColor:"#51C038",display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:F,fontWeight:700,fontSize:16,color:"#FAFAFA"}}>
+                <img src={A.naverLogo} alt="" style={{width:18,height:18}}/> 네이버로 계속하기
+              </button>
+              <button onClick={handle} style={{height:50,borderRadius:6,border:"none",backgroundColor:"#000",display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontFamily:F,fontWeight:700,fontSize:16,color:"#FAFAFA"}}>
+                <img src={A.appleLogo} alt="" style={{width:14,height:18}}/> Apple로 계속하기
+              </button>
+            </div>
+            <div style={{marginTop:24,display:"flex",alignItems:"center",justifyContent:"center",gap:12,fontSize:12,color:T.secondary}}>
+              <span style={{cursor:"pointer"}}>이메일로 로그인</span>
+              <div style={{width:1,height:12,backgroundColor:T.border}}/>
+              <span style={{cursor:"pointer"}}>이메일로 회원가입</span>
+            </div>
+            <div style={{position:"absolute",bottom:20,left:0,right:0,textAlign:"center",fontSize:12,color:T.tertiary,textDecoration:"underline"}}>
+              로그인이 잘 안되시나요?
+            </div>
+          </div>
+          {loading && (
+            <div style={{position:"absolute",inset:0,backgroundColor:"rgba(28,30,33,0.6)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",border:"3px solid rgba(255,255,255,0.25)",borderTop:"3px solid #fff",animation:"spin .7s linear infinite"}}/>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── 5. 휴대폰 번호 인증
+    function PhoneAuthScreen({ onDone, onBack }) {
+      const [name, setName] = useState("");
+      const [phone, setPhone] = useState("");
+      const [sent, setSent] = useState(false);
+      const canSend = name.trim()!=="" && phone.trim().length>=10;
+      const handleSend = () => {
+        if(!canSend) return;
+        setSent(true);
+        setTimeout(onDone, 700);
+      };
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          <OrderAppBar title="휴대폰 번호 인증" onBack={onBack}/>
+          <div style={{flex:1,overflowY:"auto",padding:24,display:"flex",flexDirection:"column",gap:24}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontWeight:700,fontSize:16,color:T.primary}}>휴대폰 번호를 인증해주세요</span>
+              <span style={{fontSize:14,color:T.secondary}}>주문을 위해 최초 1회 인증이 필요해요</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontSize:13,fontWeight:500,color:T.tertiary}}>이름</span>
+              <div style={{border:`1px solid ${name?T.primary:T.border}`,borderRadius:6,height:48,display:"flex",alignItems:"center",padding:"0 16px"}}>
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="이름을 입력해주세요"
+                  style={{flex:1,border:"none",outline:"none",background:"none",fontSize:14,color:T.primary,fontFamily:F}}/>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontSize:13,fontWeight:500,color:T.tertiary}}>휴대폰 번호</span>
+              <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1,border:`1px solid ${phone?T.primary:T.border}`,borderRadius:6,height:48,display:"flex",alignItems:"center",padding:"0 16px"}}>
+                  <input value={phone} onChange={e=>setPhone(e.target.value.replace(/[^0-9]/g,""))} placeholder="01011112233" maxLength={11}
+                    style={{flex:1,border:"none",outline:"none",background:"none",fontSize:14,color:T.primary,fontFamily:F}}/>
+                </div>
+                <button onClick={handleSend} disabled={!canSend} style={{width:64,borderRadius:6,border:"none",backgroundColor:canSend?T.brand:T.bgLight,color:canSend?T.white:T.hint,fontWeight:700,fontSize:16,cursor:canSend?"pointer":"default",fontFamily:F}}>
+                  {sent?"...":"발송"}
+                </button>
+              </div>
+            </div>
+            <div style={{backgroundColor:"#FAFAFA",borderRadius:8,padding:12,display:"flex",flexDirection:"column",gap:4}}>
+              <span style={{fontWeight:700,fontSize:14,color:T.primary}}>확인해 주세요!</span>
+              <span style={{fontSize:13,color:T.secondary,lineHeight:"18px"}}>• 원활한 서비스 제공을 위해 최초 1회만 휴대폰 인증을 진행합니다.</span>
+              <span style={{fontSize:13,color:T.secondary,lineHeight:"18px"}}>• 인증한 연락처 정보는 펫프렌즈 서비스만을 위해 사용되며, 제3자에게 제공되지 않습니다.</span>
+            </div>
+          </div>
+          <HomeIndicator/>
+        </div>
+      );
+    }
+
+    // ── 6. 주소 검색
+    function AddressSearchScreen({ onSelect, onBack }) {
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          <OrderAppBar title="주소" onBack={onBack}/>
+          <div style={{flex:1,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{border:`1px solid ${T.border}`,borderRadius:6,height:48,display:"flex",alignItems:"center",padding:"0 16px"}}>
+              <span style={{fontSize:14,color:T.hint}}>지번, 도로명, 건물명으로 검색</span>
+            </div>
+            <button onClick={()=>onSelect("서울특별시 강남구 도산대로4길 15 (논현동)")}
+              style={{textAlign:"left",border:`1px solid ${T.border}`,borderRadius:6,padding:"12px 16px",background:"none",cursor:"pointer",fontFamily:F}}>
+              <div style={{fontSize:14,color:T.primary,fontWeight:500}}>서울특별시 강남구 도산대로4길 15 (논현동)</div>
+              <div style={{fontSize:12,color:T.tertiary,marginTop:2}}>도로명 주소 · 탭하여 선택</div>
+            </button>
+            <div style={{backgroundColor:"#FAFAFA",borderRadius:8,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontWeight:700,fontSize:14,color:T.primary}}>정확한 주소를 입력해 주세요</span>
+              <div style={{fontSize:12,color:T.secondary,lineHeight:"18px"}}>
+                <div>지역명(동/리) + 번지 <span style={{color:T.tertiary}}>예: 펫프동 123-4</span></div>
+                <div>도로명 + 건물번호 <span style={{color:T.tertiary}}>예: 펫프로 123</span></div>
+                <div>지역명(동/리) + 건물명(아파트명) <span style={{color:T.tertiary}}>예: 펫프동 펫프빌딩</span></div>
+              </div>
+            </div>
+          </div>
+          <HomeIndicator/>
+        </div>
+      );
+    }
+
+    // ── 7. 주소 확인(지도) + 배송지 등록완료 다이얼로그
+    function AddressConfirmScreen({ address, onConfirm, onBack }) {
+      const [confirmed, setConfirmed] = useState(false);
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+          <StatusBar/>
+          <OrderAppBar title="주소" onBack={onBack}/>
+          <div style={{height:207,backgroundColor:T.bgLight,backgroundImage:`url(${A.naverMap})`,backgroundSize:"cover",backgroundPosition:"center",flexShrink:0}}/>
+          <div style={{flex:1,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <span style={{fontSize:10,fontWeight:700,color:T.secondary,backgroundColor:"#FAFAFA",borderRadius:4,padding:"4px 6px"}}>도로명</span>
+                <span style={{fontSize:14,fontWeight:700,color:T.primary}}>{address}</span>
+              </div>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <span style={{fontSize:10,fontWeight:700,color:T.secondary,backgroundColor:"#FAFAFA",borderRadius:4,padding:"4px 6px",width:28,textAlign:"center"}}>지번</span>
+                <span style={{fontSize:14,color:T.secondary}}>서울특별시 강남구 논현동 16-23 큐브타워</span>
+              </div>
+            </div>
+            <div style={{border:`1px solid ${T.border}`,borderRadius:6,height:48,display:"flex",alignItems:"center",padding:"0 16px"}}>
+              <span style={{fontSize:14,color:T.primary}}>5층</span>
+            </div>
+          </div>
+          <div style={{flexShrink:0,padding:16}}>
+            <button onClick={()=>setConfirmed(true)} style={{width:"100%",height:48,borderRadius:6,border:"none",backgroundColor:T.brand,color:T.white,fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:F}}>
+              이 주소가 확실해요
+            </button>
+          </div>
+          <HomeIndicator/>
+          {confirmed && (
+            <div style={{position:"absolute",inset:0,backgroundColor:"rgba(28,30,33,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50}}>
+              <div style={{width:295,backgroundColor:T.white,borderRadius:10,overflow:"hidden",fontFamily:F}}>
+                <div style={{padding:"28px 16px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:16,textAlign:"center"}}>
+                  <div style={{width:40,height:40,borderRadius:"50%",backgroundColor:"#FFDFEA",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <svg width={20} height={16} viewBox="0 0 20 16" fill="none"><path d="M1 8L7 14L19 1" stroke={T.brand} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:20,color:"#000"}}>배송지 등록완료</div>
+                    <div style={{fontSize:14,color:T.secondary,marginTop:4}}>지금 입력하신 주소는 <b style={{color:T.primary}}>심쿵배송</b>이 가능해요!</div>
+                  </div>
+                  <div style={{backgroundColor:"#FAFAFA",borderRadius:8,padding:12,width:"100%",textAlign:"center"}}>
+                    <div style={{fontWeight:700,fontSize:14,color:T.primary}}>오늘 주문하면 오늘 도착</div>
+                    <div style={{fontSize:13,color:T.secondary,marginTop:4}}>설, 추석 제외 · 3만원 이상 구매 시 무료배송</div>
+                  </div>
+                </div>
+                <div style={{borderTop:`1px solid ${T.border}`}}>
+                  <button onClick={onConfirm} style={{width:"100%",height:48,border:"none",background:"none",fontWeight:500,fontSize:14,color:T.primary,cursor:"pointer",fontFamily:F}}>확인</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── 8. 주문/결제 (두 플로우 합류)
+    function CheckoutScreen({ items, onPay, onBack }) {
+      const [entryMethod, setEntryMethod] = useState("");
+      const [dateOpt, setDateOpt] = useState("dawn");
+      const productTotal = items.reduce((s,it)=> s + (it.price? parseInt(it.price.replace(/,/g,"")):0), 0);
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <StatusBar/>
+          <OrderAppBar title="주문/결제" onBack={onBack}/>
+          <div style={{flex:1,overflowY:"auto"}}>
+            <div style={{padding:"16px 16px 0",fontWeight:700,fontSize:14,color:T.primary}}>홍도경 &nbsp;010-9206-3677</div>
+            <div style={{padding:16,display:"flex",flexDirection:"column",gap:8}}>
+              <span style={{fontWeight:700,fontSize:15,color:T.primary}}>배송지 정보</span>
+              <div style={{fontSize:14,color:T.primary}}>서울특별시 강남구 도산대로4길 15 (논현동) 5층</div>
+              <div style={{fontSize:13,color:T.secondary}}>심쿵팸 &nbsp;010-1234-5678</div>
+            </div>
+            <button onClick={()=>setEntryMethod(m=>m?"":"공동현관 비밀번호 입력")}
+              style={{width:"100%",background:"none",border:"none",borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,padding:"16px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",fontFamily:F}}>
+              <span style={{fontSize:14,color:T.primary}}>배송지 출입방법*</span>
+              <span style={{fontSize:14,color:entryMethod?T.primary:T.tertiary}}>{entryMethod || "(필수) 선택해 주세요"} &gt;</span>
+            </button>
+            <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
+              <span style={{fontWeight:700,fontSize:15,color:T.primary}}>심쿵배송 배송정보</span>
+              {[
+                {id:"dawn",day:"내일 4/25(화)",label:"4시간 31분 34초 내 주문 시",sub:"새벽 7시 전 도착"},
+                {id:"evening",day:"내일 4/25(화)",label:"오후 8시 ~ 밤 12시 전 도착"},
+                {id:"day2",day:"모레 4/26(화)",label:"새벽 7시 전 도착"},
+                {id:"parcel",day:"펫프택배",label:"오늘 4/24(월) 출고"},
+              ].map(opt=>(
+                <label key={opt.id} onClick={()=>setDateOpt(opt.id)} style={{display:"flex",gap:10,alignItems:"flex-start",cursor:"pointer"}}>
+                  <div style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${dateOpt===opt.id?T.brand:T.border}`,flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {dateOpt===opt.id && <div style={{width:10,height:10,borderRadius:"50%",backgroundColor:T.brand}}/>}
+                  </div>
+                  <div>
+                    <div style={{fontSize:13,color:T.tertiary}}>{opt.day}</div>
+                    <div style={{fontSize:14,color:T.primary,fontWeight:500}}>{opt.label}</div>
+                    {opt.sub && <div style={{fontSize:13,color:T.secondary}}>{opt.sub}</div>}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div style={{padding:16,borderTop:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between"}}>
+              <span style={{fontSize:14,color:T.primary}}>배송 메모*</span>
+              <span style={{fontSize:14,color:T.tertiary}}>받는 장소 선택해 주세요 &gt;</span>
+            </div>
+            <div style={{padding:16,borderTop:`8px solid ${T.bgLight}`,display:"flex",justifyContent:"space-between"}}>
+              <span style={{fontSize:14,color:T.primary}}>주문 상품 {items.length}</span><span style={{fontSize:14,color:T.tertiary}}>▾</span>
+            </div>
+            <div style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:10}}>
+              {items.map(it=>(<div key={it.id} style={{fontSize:13,color:T.secondary}}>{it.name} · {it.price}원</div>))}
+            </div>
+            <div style={{padding:16,borderTop:`8px solid ${T.bgLight}`,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontWeight:700,fontSize:15,color:T.primary}}>결제금액</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:T.secondary}}><span>총 상품 금액</span><span>{productTotal.toLocaleString()}원</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:T.secondary}}><span>배송비</span><span>무료</span></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:15,color:T.primary,borderTop:`1px solid ${T.border}`,paddingTop:10}}>
+                <span>총 결제 금액</span><span>{productTotal.toLocaleString()}원</span>
+              </div>
+            </div>
+          </div>
+          <div style={{flexShrink:0,padding:16,borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{fontSize:11,color:T.tertiary,textAlign:"center"}}>위 주문 내용을 확인했으며, 결제에 동의합니다.</div>
+            <button onClick={onPay} style={{width:"100%",height:48,borderRadius:6,border:"none",backgroundColor:T.brand,color:T.white,fontWeight:700,fontSize:16,cursor:"pointer",fontFamily:F}}>
+              {productTotal.toLocaleString()}원 결제하기
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── 9. 주문 완료
+    function OrderCompleteScreen({ onRestart }) {
+      return (
+        <div style={{width:375,height:812,backgroundColor:T.white,fontFamily:F,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:24,textAlign:"center"}}>
+          <div style={{width:56,height:56,borderRadius:"50%",backgroundColor:"#FFDFEA",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={28} height={22} viewBox="0 0 20 16" fill="none"><path d="M1 8L7 14L19 1" stroke={T.brand} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <span style={{fontWeight:700,fontSize:20,color:T.primary}}>주문이 완료되었어요!</span>
+          <span style={{fontSize:14,color:T.secondary}}>수의사가 처방한 사료가{"\n"}심쿵배송으로 안전하게 도착할 거예요</span>
+          <button onClick={onRestart} style={{marginTop:8,height:44,padding:"0 20px",borderRadius:6,border:`1px solid ${T.border}`,background:"none",color:T.secondary,fontSize:14,cursor:"pointer",fontFamily:F}}>
+            처음 화면으로
+          </button>
+        </div>
+      );
+    }
+
+    // ── 처방식 주문 플로우 오케스트레이터
+    function PrescriptionOrderTab() {
+      const [mode, setMode] = useState("B"); // A: 기존회원(정보 있음) · B: 신규/미인증
+      const [step, setStep] = useState("kakao");
+      const [exitModal, setExitModal] = useState(false);
+      const [address, setAddress] = useState("");
+
+      const reset = () => { setStep("kakao"); setExitModal(false); };
+      const items = mode==="A" ? CART_A : CART_B;
+
+      const stepLabel = {
+        kakao:"카카오 알림톡", appstore:"앱스토어(미설치)", cartA:"장바구니 · 기존회원", cartB:"장바구니 · 신규/미인증",
+        login:"로그인/회원가입", phoneAuth:"휴대폰 번호 인증", addressSearch:"주소 검색", addressConfirm:"주소 확인 · 심쿵배송",
+        checkout:"주문/결제", complete:"주문 완료",
+      }[step] || "";
+
+      return (
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+          <div style={{display:"flex",gap:6,marginBottom:4}}>
+            {[["B","신규/미인증 유저"],["A","기존회원(정보 있음)"]].map(([k,l])=>(
+              <button key={k} onClick={()=>{ setMode(k); reset(); }}
+                style={{fontSize:12,padding:"6px 12px",borderRadius:100,border:`1px solid ${mode===k?T.brand:T.border}`,
+                  backgroundColor:mode===k?T.brand:"#fff",color:mode===k?"#fff":T.secondary,cursor:"pointer",fontFamily:F}}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <p style={{fontSize:11,color:"#999",letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:4}}>{stepLabel}</p>
+          <div className="device" style={{position:"relative"}}>
+            {step==="kakao"          && <KakaoMessageScreen onOrder={()=>setStep(mode==="A"?"cartA":"cartB")} onNoApp={()=>setStep("appstore")}/>}
+            {step==="appstore"       && <AppStoreScreen onInstall={()=>setStep("kakao")}/>}
+            {step==="cartA"          && <OrderCartScreen hasInfo={true} items={CART_A} onNext={()=>setStep("checkout")} onLeaveAttempt={()=>setExitModal(true)}/>}
+            {step==="cartB"          && <OrderCartScreen hasInfo={false} items={CART_B} onNext={()=>setStep("login")}/>}
+            {step==="login"          && <OrderLoginScreen onLogin={()=>setStep("phoneAuth")}/>}
+            {step==="phoneAuth"      && <PhoneAuthScreen onBack={()=>setStep("cartB")} onDone={()=>setStep("addressSearch")}/>}
+            {step==="addressSearch"  && <AddressSearchScreen onBack={()=>setStep("phoneAuth")} onSelect={(addr)=>{ setAddress(addr); setStep("addressConfirm"); }}/>}
+            {step==="addressConfirm" && <AddressConfirmScreen address={address} onBack={()=>setStep("addressSearch")} onConfirm={()=>setStep("checkout")}/>}
+            {step==="checkout"       && <CheckoutScreen items={items} onBack={()=>{}} onPay={()=>setStep("complete")}/>}
+            {step==="complete"       && <OrderCompleteScreen onRestart={reset}/>}
+            {exitModal && step==="cartA" && (
+              <ExitIntentModal onStay={()=>setExitModal(false)} onLeave={()=>{ setExitModal(false); reset(); }}/>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     // ── Login Page
     function LoginPage({ onLogin }) {
       const [email, setEmail]     = useState("");
@@ -864,7 +1370,7 @@
         toastTimer.current = setTimeout(() => setToast(false), 3000);
       };
 
-      const tabs = [["login","로그인"],["prescription","처방 화면"],["confirm","처방확인"],["dialog","Dialog"]];
+      const tabs = [["login","로그인"],["prescription","처방 화면"],["confirm","처방확인"],["order","처방식 주문 플로우"],["dialog","Dialog"]];
 
       const screenLabel = {
         login: "이메일 로그인 · 375×812",
@@ -917,6 +1423,10 @@
                 화살표 클릭 → 약관 펼치기/접기
               </p>
             </div>
+          )}
+
+          {tab==="order" && (
+            <PrescriptionOrderTab/>
           )}
 
           {tab==="dialog" && (
